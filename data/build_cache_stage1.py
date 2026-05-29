@@ -7,7 +7,7 @@
 학습 시엔 PIL/percentile/argmax 가 사라지고 memmap slice 한 줄만 남아 batch 당 1~2초 → 0.1초로 단축됨.
 
 사용:
-    python -m DefSeg_AM.build_cache_stage1 [--img-size 1036] [--chunk-size 50] [--rebuild]
+    python -m DefSeg_AM.data.build_cache_stage1 [--img-size 1036] [--chunk-size 50] [--rebuild]
 
 산출:
     cache/resized_sz<IMG>/
@@ -29,14 +29,14 @@ import h5py
 import numpy as np
 from PIL import Image
 
-from . import config
+from .. import config
 from .data_ornl import (
     build_layer_index,
     ornl_image_to_uint8,
     resize_image_uint8,
     resize_label,
 )
-from .log import setup_logger
+from ..utils.log import setup_logger
 
 
 def cache_dir_for(img_size: int) -> Path:

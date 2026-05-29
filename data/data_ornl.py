@@ -6,7 +6,7 @@ PLAN.md §3.1 / §3.5 / §5.1 참조. 두 가지 dataset 제공:
 2. DefSegORNLCachedDataset (사전 resize+uint8 cache memmap) — 학습 진짜 사용
 
 학습은 반드시 사전 cache 빌드 후 (2) 를 사용:
-    python -m DefSeg_AM.build_cache_stage1
+    python -m DefSeg_AM.data.build_cache_stage1
 
 - 입력: visible/0, visible/1 (각 grayscale → 3-channel replicate, ImageNet 정규화)
 - 라벨: slices/segmentation_results/{0..11} → argmax (큰 ID = 결함이 작은 ID 를 덮어쓰도록)
@@ -27,7 +27,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
-from . import config
+from .. import config
 
 
 # ---------------------------------------------------------------------------
@@ -272,7 +272,7 @@ class DefSegORNLCachedDataset(Dataset):
         if not idx_path.exists():
             raise FileNotFoundError(
                 f"Cache index not found: {idx_path}\n"
-                "Run `python -m DefSeg_AM.build_cache_stage1` first."
+                "Run `python -m DefSeg_AM.data.build_cache_stage1` first."
             )
         d = np.load(idx_path, allow_pickle=False)
         self.build_ids = d["build_ids"]                  # (N,) str

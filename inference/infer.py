@@ -5,7 +5,7 @@ PLAN.md §5.3 / seung_dscnn/infer_ornl.py 포팅.
 panel 구성: [visible/0, visible/1, DSCNN GT argmax, our prediction]
 
 사용:
-    python -m DefSeg_AM.infer --run-name <run> --build "2021-07-13 TCR Phase 1 Build 1" --stage 2
+    python -m DefSeg_AM.inference.infer --run-name <run> --build "2021-07-13 TCR Phase 1 Build 1" --stage 2
 """
 from __future__ import annotations
 
@@ -20,13 +20,13 @@ import torch.nn.functional as F
 from matplotlib import patches
 from PIL import Image
 
-from . import config
-from .data_ornl import (
+from .. import config
+from ..data.data_ornl import (
     normalize_image,
     ornl_image_to_uint8,
     ornl_segmentation_argmax,
 )
-from .model import DefSegModel, round_to_patch
+from ..models.model import DefSegModel, round_to_patch
 
 
 # 12-class 팔레트 (seung_dscnn/infer_ornl.py 와 동일)
