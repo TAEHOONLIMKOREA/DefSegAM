@@ -376,25 +376,3 @@ CUDA_VISIBLE_DEVICES=1 nohup ./venv/bin/python -m DefSeg-AM.train_stage2 \
 | Class 공간 | ORNL 12-class | ORNL 12-class — 동일 |
 
 ---
-
-## 10. 구현 순서 (예상)
-
-1. `config.py` — 경로·상수·매핑 정의 (seung_dscnn 에서 carry-over).
-2. `data_ornl.py` — Stage 1 데이터셋 + DataLoader smoke test.
-3. `data_dscnn.py` — Stage 2 데이터셋 + DataLoader smoke test.
-4. `model.py` — DefSegModel (DPT decoder 자체 구현) + forward shape 검증.
-5. `train_stage1.py` — 학습 루프 + `--quick` 스모크 (224 입력, 2 epoch).
-6. `train_stage2.py` — Stage 1 checkpoint load + finetune.
-7. `infer.py` — ORNL 4-panel 시각화 (seung_dscnn/infer_ornl.py 포팅).
-8. `run_stage1.sh`, `run_stage2.sh` — nohup 백그라운드 스크립트.
-9. `README.md` — 실행법·결과 요약 (학습 완료 후).
-
----
-
-## 11. 미해결 / 추후 결정 사항
-
-- **패키지 이름의 하이픈 문제**: `DefSeg-AM` 폴더명 그대로 가면 `python -m DefSeg-AM.xxx` 가 import 불가. 구현 시 `DefSeg_AM` 으로 rename 하거나 직접 `python DefSeg-AM/xxx.py` 로 실행하는 방식 확정 필요.
-- **DPT decoder 의 정확한 stride / channel 설계**는 1036 입력에 맞춰 구현 시 미세 조정 (특히 stage s1 의 4× upsample 후 296 vs s2 의 148 의 정확한 align).
-- **Stage 1 의 batch 구성**: 5 빌드 × 수천 layer 면 1 epoch 가 매우 오래 걸릴 수 있음 → 필요 시 `--steps-per-epoch` 로 sub-sample 도입 검토.
-- **Class imbalance 추가 대책**: §3.1 의 defect-free layer 필터링 + §5.1 의 Focal Loss + light oversampling 으로 1차 대응. 그래도 rare class (Spatter, Under Melting 등) 의 mIoU 가 0 에 머무를 경우 → **Dice Loss 추가** (`loss = focal + 0.5 * dice`) 또는 **oversampling weight 강화** (`^0.5` → `^1.0`) 시도.
-- **Stage 2 만으로 finetune 충분한지 vs joint training**: 일단 sequential (S1 → S2) 로 가되, ablation 으로 `joint(S1 loss + α·S2 loss)` 비교 가능.
