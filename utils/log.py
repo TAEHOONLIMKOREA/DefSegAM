@@ -1,7 +1,7 @@
 """Timestamped, rank-aware logger.
 
 사용:
-    from .log import setup_logger, get_logger
+    from ..utils.log import setup_logger, get_logger
     log = setup_logger(rank=rank)
     log.info("hello")
     # → 17:23:45.001 [r0] hello

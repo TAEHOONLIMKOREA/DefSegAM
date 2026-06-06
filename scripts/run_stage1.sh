@@ -3,14 +3,14 @@
 # NaN-fix v2: AMP off + grad clip 1.0 + warmup 200 + lr 1e-4 + class weight clip 10
 # 사전조건: run_build_cache.sh 가 1회 완료되어 cache/resized_sz1036/ 가 준비됨.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 export PYTHONUNBUFFERED=1
 export HDF5_USE_FILE_LOCKING=FALSE
 export CUDA_VISIBLE_DEVICES=0          # 첫 번째 GPU (1 GPU 모드)
 export OMP_NUM_THREADS=8
 
-nohup ./DefSeg_AM/venv/bin/python -u -m DefSeg_AM.train_stage1 \
+nohup ./DefSeg_AM/venv/bin/python -u -m DefSeg_AM.training.train_stage1 \
     --epochs 30 \
     --batch-size 2 \
     --img-size 1036 \
@@ -20,7 +20,7 @@ nohup ./DefSeg_AM/venv/bin/python -u -m DefSeg_AM.train_stage1 \
     --oversample-power 0.5 \
     --val-log-every 100 \
     --run-name vits14_dpt_dual_sz1036_1gpu_nanfix \
-    > DefSeg_AM/stage1.log 2>&1 &
+    > DefSeg_AM/logs/stage1.log 2>&1 &
 echo "PID=$!"
-echo "tail -f DefSeg_AM/stage1.log"
-tail -f DefSeg_AM/stage1.log
+echo "tail -f DefSeg_AM/logs/stage1.log"
+tail -f DefSeg_AM/logs/stage1.log

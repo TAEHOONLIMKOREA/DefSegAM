@@ -22,7 +22,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from . import config
+from .. import config
 
 
 def round_to_patch(size: int, patch: int) -> int:
