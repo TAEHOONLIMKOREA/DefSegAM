@@ -1,13 +1,12 @@
 # DefSeg-AM
 
-ORNL L-PBF(Laser Powder Bed Fusion) 의 layer-wise powder bed 이미지에 대한
+L-PBF(Laser Powder Bed Fusion) 의 layer-wise powder bed 이미지에 대한
 **12-class 결함 semantic segmentation** 모델.
 
 **DINOv2 (frozen) backbone + DPT-style multi-scale decoder** 를
 **2-stage(KD pretrain → GT finetune)** 로 학습한다.
 
-> 설계 근거 및 상세 의사결정은 [PLAN.md](PLAN.md) 를, 학습 중 만난 이슈/해결 기록은
-> [DEBUG_HISTORY.md](DEBUG_HISTORY.md) 를, 클래스 정의는 [docs/DSCNN_Classes.md](docs/DSCNN_Classes.md) 를 참고.
+> 학습 중 만난 이슈/해결 기록은 [DEBUG_HISTORY.md](DEBUG_HISTORY.md) 를, 클래스 정의는 [docs/DSCNN_Classes.md](docs/DSCNN_Classes.md) 를 참고.
 
 ---
 
@@ -32,7 +31,7 @@ ORNL L-PBF(Laser Powder Bed Fusion) 의 layer-wise powder bed 이미지에 대�
 
 ---
 
-## 2. 12 클래스 (ORNL 공간)
+## 2. 12 클래스
 
 ```
 0 Powder              1 Printed             2 Recoater Hopping    3 Recoater Streaking
@@ -93,8 +92,7 @@ DefSeg_AM/
 
 ## 4. 데이터 위치
 
-`config.py` 의 `PROJECT_ROOT` 는 상위 디렉터리(`3DP_VPPM/`)를 가리키며, 데이터는 그 아래에 둔다.
-
+- 현재 리퍼지토리에는 없음 (서버에 존재)
 - **Stage 1** — `ORNL_Data/Co-Registered In-Situ and Ex-Situ Dataset/[baseline] (Peregrine v2023-11)/*.hdf5` (5 빌드)
   - Train: Build 2·3·4·5 / Val: **Build 1** (정성 비교용)
 - **Stage 2** — `ORNL_Data/DSCNN_Dataset/...` (LPBF 6 source, EBPBF/BJ 제외)
@@ -116,8 +114,8 @@ DINOv2 backbone 은 최초 실행 시 `torch.hub` 로 자동 다운로드된다.
 
 ## 6. 실행
 
-모든 스크립트는 저장소 루트(`3DP_VPPM/`)에서 호출하며, 내부적으로 `python -m DefSeg_AM.<module>` 로 실행한다.
-GPU 선택은 스크립트 안의 `CUDA_VISIBLE_DEVICES` 로 조정한다.
+`python -m DefSeg_AM.<module>` 로 실행.
+GPU 선택은 스크립트 안의 `CUDA_VISIBLE_DEVICES` 로 조정.
 
 ### (0) 캐시 사전 생성 — 학습 전 1회 필수
 
