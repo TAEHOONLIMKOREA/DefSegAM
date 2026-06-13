@@ -219,12 +219,22 @@ def main():
     ap.add_argument("--img-size", type=int, default=None,
                     help="미지정 시 ckpt config 의 img_size 사용")
     ap.add_argument("--out-dir", type=str, default=None)
+    ap.add_argument("--ckpt-stage", type=int, default=None, choices=[1, 2],
+                    help="평가할 체크포인트 stage (미지정 시 --stage). data-stage 와 분리 가능")
+    ap.add_argument("--data-stage", type=int, default=None, choices=[1, 2],
+                    help="평가에 쓸 데이터셋 stage (미지정 시 --stage). "
+                         "예: --ckpt-stage 1 --data-stage 2 → Stage1 모델을 사람 GT(stage2)로 평가")
     args = ap.parse_args()
+
+    # ckpt/data stage 분리 (기본은 --stage 로 둘 다)
+    ckpt_stage = args.ckpt_stage or args.stage
+    data_stage = args.data_stage or args.stage
+    cross = ckpt_stage != data_stage
 
     if args.checkpoint is None:
         if args.run_name is None:
             ap.error("--run-name 또는 --checkpoint 중 하나는 필요")
-        args.checkpoint = str(config.CHECKPOINT_DIR / args.run_name / f"stage{args.stage}_best.pt")
+        args.checkpoint = str(config.CHECKPOINT_DIR / args.run_name / f"stage{ckpt_stage}_best.pt")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(args.checkpoint, map_location=device, weights_only=False)
@@ -238,9 +248,11 @@ def main():
     img_size = args.img_size or cfg.get("img_size", config.IMG_SIZE)
     img_size = round_to_patch(img_size, model.patch_size)
 
-    loader, desc = build_val_loader(args.stage, img_size, args.batch_size,
+    loader, desc = build_val_loader(data_stage, img_size, args.batch_size,
                                     args.num_workers, split=args.split)
-    print(f"stage {args.stage} | {desc} | img_size={img_size}")
+    tag = (f"ckpt=stage{ckpt_stage} | data=stage{data_stage} (CROSS-EVAL)"
+           if cross else f"stage{ckpt_stage}")
+    print(f"{tag} | {desc} | img_size={img_size}")
 
     cm = accumulate_confusion(model, loader, device, config.N_CLASSES)
     m = per_class_metrics(cm)
@@ -252,7 +264,8 @@ def main():
     else:
         run = args.run_name or "adhoc"
         sub = "confusion" if args.split == "val" else f"confusion_{args.split}"
-        out_dir = config.FIGURE_DIR / run / f"stage{args.stage}" / sub
+        stage_dir = (f"ckpt{ckpt_stage}_data{data_stage}" if cross else f"stage{ckpt_stage}")
+        out_dir = config.FIGURE_DIR / run / stage_dir / sub
     out_dir.mkdir(parents=True, exist_ok=True)
 
     np.save(out_dir / "confusion_counts.npy", cm)
