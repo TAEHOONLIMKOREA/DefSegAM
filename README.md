@@ -15,7 +15,7 @@ ORNL Peregrine in-situ 모니터링으로 매 layer 마다 촬영된 두 장의 
 
 ## 1. 모델 개요 (high-level)
 
-![High-level architecture](docs/DefSegAM_Architecture_Design_v1.png)
+![High-level architecture](docs/DefSegAM_Architecture_Design_v1.jpg)
 
 | 구분 | 내용 |
 |---|---|
