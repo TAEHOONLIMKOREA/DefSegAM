@@ -153,7 +153,7 @@ def main():
     ap.add_argument("--n-layers", type=int, default=config.N_INFER_LAYERS)
     ap.add_argument("--img-size", type=int, default=config.IMG_SIZE)
     ap.add_argument("--out-dir", type=str, default=None,
-                    help="저장 디렉토리. 미지정 시 figures/<run-name>/stage<stage>/inference/<build>/")
+                    help="저장 디렉토리. 미지정 시 figures/<run-name>/stage<stage>_model_on_stage<stage>_data/inference/<build>/")
     args = ap.parse_args()
 
     if args.checkpoint is None:
@@ -180,7 +180,7 @@ def main():
     layers = args.layers if args.layers is not None else select_default_layers(n_total, args.n_layers)
 
     if args.out_dir is None:
-        out_dir = config.FIGURE_DIR / args.run_name / f"stage{args.stage}" / "inference" / args.build.replace(" ", "_")
+        out_dir = config.FIGURE_DIR / args.run_name / f"stage{args.stage}_model_on_stage{args.stage}_data" / "inference" / args.build.replace(" ", "_")
     else:
         out_dir = Path(args.out_dir)
 

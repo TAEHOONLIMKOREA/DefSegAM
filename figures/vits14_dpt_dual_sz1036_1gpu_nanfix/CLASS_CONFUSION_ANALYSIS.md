@@ -106,9 +106,11 @@ train은 12클래스를 거의 다 포함 → 12×12 완성. val은 절반이 GT
 
 ```
 figures/vits14_dpt_dual_sz1036_1gpu_nanfix/
-├── stage1/confusion/          # val (Build 1)
-├── stage1/confusion_train/    # train (B2-5) — 12클래스 완성
-└── stage2/confusion/          # Maraging 사람 GT
+├── stage1_model_on_stage1_data/confusion/          # val (Build 1)
+├── stage1_model_on_stage1_data/confusion_train/    # train (B2-5) — 12클래스 완성
+├── stage2_model_on_stage2_data/confusion/          # Maraging 사람 GT
+├── stage2_model_on_stage1_data/confusion/          # (교차) stage2 모델 → stage1 데이터
+└── stage1_model_on_stage2_data/confusion/          # (교차) stage1 모델 → stage2 데이터
         ├── confusion_counts.npy
         ├── confusion_matrix.csv
         ├── per_class_metrics.csv

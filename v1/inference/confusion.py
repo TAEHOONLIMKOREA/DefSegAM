@@ -5,7 +5,7 @@
 - Stage 1: ORNL cached val (Build 1, DSCNN pred GT) — 대규모, 통계적으로 안정
 - Stage 2: DSCNN_Dataset val (Maraging, human GT) — 소규모
 
-출력 (out_dir, 기본 figures/<run>/stage<stage>/confusion/):
+출력 (out_dir, 기본 figures/<run>/stage<ckpt>_model_on_stage<data>_data/confusion/):
     confusion_counts.npy          : (N, N) int64 — rows=GT, cols=Pred
     confusion_matrix.csv          : 위 행렬 + class 이름 헤더
     per_class_metrics.csv         : support / IoU / precision / recall / top-confusion
@@ -264,7 +264,7 @@ def main():
     else:
         run = args.run_name or "adhoc"
         sub = "confusion" if args.split == "val" else f"confusion_{args.split}"
-        stage_dir = (f"ckpt{ckpt_stage}_data{data_stage}" if cross else f"stage{ckpt_stage}")
+        stage_dir = f"stage{ckpt_stage}_model_on_stage{data_stage}_data"
         out_dir = config.FIGURE_DIR / run / stage_dir / sub
     out_dir.mkdir(parents=True, exist_ok=True)
 
