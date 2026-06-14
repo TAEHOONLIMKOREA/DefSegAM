@@ -1,17 +1,15 @@
-"""DefSeg-AM v1: DINOv2 + DPT decoder, 2-stage segmentation.
+"""DefSeg-AM 공통 설정 — v1·v2 공유 상수.
 
-Stage 1 = ORNL HDF5 segmentation_results (DSCNN pred) 으로 KD pretrain.
-Stage 2 = DSCNN_Dataset annotations (human GT) 로 finetune.
-
-자세한 설계는 PLAN.md 참고.
-
-> v2 (8-class + cross-val + DSCNN aug) 는 별도 [DefSeg_AM/v2/](v2/) 폴더에 분리.
+경로/ORNL 라벨공간/DSCNN 재매핑/backbone·decoder/입력·출력 경로 등
+v1 과 v2 가 함께 쓰는 substrate. v1 전용 하이퍼파라미터(S1_*/S2_*)는
+[../v1/config.py](../v1/config.py), v2 전용은 [../v2/config_v2.py](../v2/config_v2.py).
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# common/config.py → DefSeg_AM/ → 3DP_VPPM/ (repo root)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # === ORNL Co-Registered HDF5 (Stage 1 KD pretrain) ===
 ORNL_HDF5_DIR = (
@@ -131,7 +129,6 @@ DSCNN_TRAIN_SOURCES = [
         "mapping_key": "Maraging_Steel",
     },
 ]
-DSCNN_VAL_SOURCE_NAMES = ["v2022_Maraging"]
 
 # === Backbone / Decoder ===
 DINO_BACKBONE = "dinov2_vits14"  # embed_dim=384, patch=14, 12 blocks
@@ -149,39 +146,13 @@ ORNL_LAYER_HI_FRAC = 0.95  # ~ 95%
 # "Powder/Printed only" layer 제외 — defect mask 합이 이 이하면 drop
 DEFECT_PIXEL_MIN = 1  # 결함 픽셀이 단 1개라도 있으면 keep (정확히 0인 것만 drop)
 
-# === Stage 1 (KD pretrain) ===
-# 안정성 fix (이전 run NaN 발생 → 5가지 적용):
-#   - lr 5e-4 → 1e-4 (작은 decoder + Focal + α=clip 조합 안정)
-#   - warmup 200 step (학습 초반 grad explosion 방지)
-#   - grad_clip max_norm=1.0 (FP32 raw grad 크기 제한)
-#   - class_weight clip 50 → 10 (rare class 의 loss 폭주 방지)
-#   - AMP off (FP16 overflow 위험 제거)
-S1_EPOCHS = 30
-S1_BATCH_SIZE = 2
-S1_LR = 1e-4
-S1_WEIGHT_DECAY = 1e-4
-S1_FOCAL_GAMMA = 2.0
-S1_OVERSAMPLE_POWER = 0.5
-S1_OVERSAMPLE_EPS = 1e-3
-S1_WARMUP_STEPS = 200            # linear warmup 0 → lr 동안 step 수
-S1_GRAD_CLIP_NORM = 1.0          # gradient L2-norm clip
-S1_CLASS_WEIGHT_CLIP = 10.0      # sqrt-inv weight 의 max 값
-
-# === Stage 2 (GT finetune) ===
-S2_EPOCHS = 50
-S2_BATCH_SIZE = 2
-S2_LR = 1e-4
-S2_WEIGHT_DECAY = 1e-4
-S2_WARMUP_STEPS = 50             # 데이터 작아서 warmup 도 짧게
-S2_GRAD_CLIP_NORM = 1.0
-S2_CLASS_WEIGHT_CLIP = 10.0
-
 # === 추론/시각화 ===
 N_INFER_LAYERS = 12  # ORNL 비교 추론 시 균등 추출할 layer 개수
 NUM_WORKERS = 4
 
-# === 출력 경로 ===
-OUTPUT_DIR = Path(__file__).resolve().parent
+# === 출력 경로 (v1·v2 공유; run-name 으로 구분) ===
+# common/config.py → DefSeg_AM/
+OUTPUT_DIR = Path(__file__).resolve().parents[1]
 CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
 FIGURE_DIR = OUTPUT_DIR / "figures"
 CACHE_DIR = OUTPUT_DIR / "cache"

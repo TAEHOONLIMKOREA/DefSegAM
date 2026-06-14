@@ -6,7 +6,7 @@ PLAN.md §3.1 / §3.5 / §5.1 참조. 두 가지 dataset 제공:
 2. DefSegORNLCachedDataset (사전 resize+uint8 cache memmap) — 학습 진짜 사용
 
 학습은 반드시 사전 cache 빌드 후 (2) 를 사용:
-    python -m DefSeg_AM.data.build_cache_stage1
+    python -m DefSeg_AM.v1.data.build_cache_stage1
 
 - 입력: visible/0, visible/1 (각 grayscale → 3-channel replicate, ImageNet 정규화)
 - 라벨: slices/segmentation_results/{0..11} → argmax (큰 ID = 결함이 작은 ID 를 덮어쓰도록)
@@ -24,46 +24,15 @@ from pathlib import Path
 import h5py
 import numpy as np
 import torch
-from PIL import Image
 from torch.utils.data import Dataset
 
 from .. import config
-
-
-# ---------------------------------------------------------------------------
-# 공용 유틸 (seung_dscnn 에서 carry-over, PLAN §6.1)
-# ---------------------------------------------------------------------------
-
-def normalize_image(img_uint8: np.ndarray) -> np.ndarray:
-    """uint8 (H, W) grayscale → (3, H, W) float32, ImageNet 정규화."""
-    arr = img_uint8.astype(np.float32) / 255.0
-    arr = np.stack([arr, arr, arr], axis=0)
-    mean = np.array(config.IMAGENET_MEAN, dtype=np.float32)[:, None, None]
-    std = np.array(config.IMAGENET_STD, dtype=np.float32)[:, None, None]
-    return (arr - mean) / std
-
-
-def resize_image_uint8(arr: np.ndarray, size: int) -> np.ndarray:
-    return np.array(Image.fromarray(arr).resize((size, size), Image.BILINEAR))
-
-
-def resize_label(ann: np.ndarray, size: int) -> np.ndarray:
-    # int8 은 PIL 이 직접 지원 못 함 → int16 우회
-    return np.array(
-        Image.fromarray(ann.astype(np.int16)).resize((size, size), Image.NEAREST)
-    ).astype(np.int8)
-
-
-def ornl_image_to_uint8(img: np.ndarray) -> np.ndarray:
-    """ORNL float32 → uint8. percentile (1, 99) 기반 per-image normalize."""
-    if img.dtype == np.uint8:
-        return img
-    nz = img[img > 0] if (img > 0).any() else img
-    lo, hi = np.percentile(nz, [1, 99])
-    if hi <= lo:
-        hi = lo + 1
-    norm = np.clip((img - lo) / (hi - lo), 0, 1)
-    return (norm * 255).astype(np.uint8)
+from ...common.data.image_utils import (  # 공용 유틸 (PLAN §6.1)
+    normalize_image,
+    resize_image_uint8,
+    resize_label,
+    ornl_image_to_uint8,
+)
 
 
 def ornl_segmentation_argmax(
@@ -272,7 +241,7 @@ class DefSegORNLCachedDataset(Dataset):
         if not idx_path.exists():
             raise FileNotFoundError(
                 f"Cache index not found: {idx_path}\n"
-                "Run `python -m DefSeg_AM.data.build_cache_stage1` first."
+                "Run `python -m DefSeg_AM.v1.data.build_cache_stage1` first."
             )
         d = np.load(idx_path, allow_pickle=False)
         self.build_ids = d["build_ids"]                  # (N,) str

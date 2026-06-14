@@ -3,7 +3,7 @@
 PLAN.md §5.2 참조. Stage 1 best 로 init, 표준 CE.
 
 사용 (4 GPU torchrun):
-    torchrun --standalone --nproc-per-node=4 -m DefSeg_AM.training.train_stage2 \\
+    torchrun --standalone --nproc-per-node=4 -m DefSeg_AM.v1.training.train_stage2 \\
         --run-name vits14_dpt_dual_sz1036 [--quick] [--no-init]
 """
 from __future__ import annotations
@@ -26,13 +26,13 @@ from ..data.data_dscnn import (
     compute_class_counts,
     split_train_val,
 )
-from ..utils.log import setup_logger
-from ..models.losses import sqrt_inv_class_weight
-from ..models.model import DefSegModel, round_to_patch
-from .train_stage1 import (
-    init_distributed, is_main, unwrap,
-    update_counts, reduce_counts,
+from ...common.utils.log import setup_logger
+from ...common.models.losses import sqrt_inv_class_weight
+from ...common.models.model import DefSegModel, round_to_patch
+from ...common.training.dist_utils import (
+    init_distributed, is_main, unwrap, reduce_counts,
 )
+from .train_stage1 import update_counts
 
 
 def main():

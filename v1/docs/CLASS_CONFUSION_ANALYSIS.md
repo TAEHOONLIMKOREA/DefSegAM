@@ -20,9 +20,9 @@
 ```bash
 # 사용 (scripts/run_confusion.sh 또는 직접)
 STAGE=1 bash DefSeg_AM/scripts/run_confusion.sh                    # stage1 val (Build 1)
-CUDA_VISIBLE_DEVICES=1 python -m DefSeg_AM.inference.confusion \
+CUDA_VISIBLE_DEVICES=1 python -m DefSeg_AM.v1.inference.confusion \
     --run-name vits14_dpt_dual_sz1036_1gpu_nanfix --stage 1 --split train   # stage1 train (B2-5)
-python -m DefSeg_AM.inference.confusion --run-name <run> --stage 2          # stage2 (Maraging GT)
+python -m DefSeg_AM.v1.inference.confusion --run-name <run> --stage 2          # stage2 (Maraging GT)
 ```
 
 confusion matrix: **행=GT, 열=Pred**, IGNORE(-1) 제외.

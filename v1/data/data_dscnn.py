@@ -17,7 +17,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from .. import config
-from .data_ornl import (
+from ...common.data.image_utils import (
     normalize_image,
     resize_image_uint8,
     resize_label,

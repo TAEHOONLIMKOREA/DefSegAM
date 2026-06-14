@@ -12,7 +12,7 @@
     confusion_row_normalized.png  : row-정규화 히트맵 (GT 기준 예측 분포)
 
 사용:
-    python -m DefSeg_AM.inference.confusion --run-name <run> --stage 1
+    python -m DefSeg_AM.v1.inference.confusion --run-name <run> --stage 1
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from .. import config
-from ..models.model import DefSegModel, round_to_patch
+from ...common.models.model import DefSegModel, round_to_patch
 
 
 # ---------------------------------------------------------------------------

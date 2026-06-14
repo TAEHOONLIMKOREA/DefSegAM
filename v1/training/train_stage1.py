@@ -3,10 +3,10 @@
 PLAN.md §5.1 참조.
 
 사전조건:
-    python -m DefSeg_AM.data.build_cache_stage1     # 사전 resize+uint8 cache 빌드 (1회)
+    python -m DefSeg_AM.v1.data.build_cache_stage1     # 사전 resize+uint8 cache 빌드 (1회)
 
 사용 (4 GPU torchrun):
-    torchrun --standalone --nproc-per-node=4 -m DefSeg_AM.training.train_stage1 \\
+    torchrun --standalone --nproc-per-node=4 -m DefSeg_AM.v1.training.train_stage1 \\
         --epochs 30 --batch-size 2 --img-size 1036 \\
         --run-name vits14_dpt_dual_sz1036 [--quick]
 """
@@ -28,34 +28,13 @@ from torch.utils.data.distributed import DistributedSampler
 from .. import config
 from ..data.build_cache_stage1 import cache_dir_for
 from ..data.data_ornl import DefSegORNLCachedDataset, estimate_class_counts_cached
-from ..utils.log import setup_logger
-from ..models.losses import focal_loss, sqrt_inv_class_weight
-from ..models.model import DefSegModel, round_to_patch
-from ..data.samplers import DistributedWeightedSampler
-
-
-# ---------------------------------------------------------------------------
-# DDP helpers
-# ---------------------------------------------------------------------------
-
-def init_distributed() -> tuple[int, int, int]:
-    """torchrun 환경이면 DDP init, 아니면 single-process. Returns (rank, world_size, local_rank)."""
-    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
-        dist.init_process_group(backend="nccl")
-        rank = dist.get_rank()
-        world_size = dist.get_world_size()
-        local_rank = int(os.environ.get("LOCAL_RANK", 0))
-        torch.cuda.set_device(local_rank)
-        return rank, world_size, local_rank
-    return 0, 1, 0
-
-
-def is_main(rank: int) -> bool:
-    return rank == 0
-
-
-def unwrap(m):
-    return m.module if hasattr(m, "module") else m
+from ...common.utils.log import setup_logger
+from ...common.models.losses import focal_loss, sqrt_inv_class_weight
+from ...common.models.model import DefSegModel, round_to_patch
+from ...common.data.samplers import DistributedWeightedSampler
+from ...common.training.dist_utils import (
+    init_distributed, is_main, unwrap, reduce_counts,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -78,12 +57,6 @@ def update_counts(
         g = (label == c) & valid
         inter[c] += (p & g).sum()
         union[c] += (p | g).sum()
-
-
-def reduce_counts(world_size: int, *tensors: torch.Tensor) -> None:
-    if world_size > 1:
-        for t in tensors:
-            dist.all_reduce(t, op=dist.ReduceOp.SUM)
 
 
 # ---------------------------------------------------------------------------
