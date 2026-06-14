@@ -1,6 +1,6 @@
 # DefSeg-AM 모델 구조 (DefSegModel)
 
-[models/model.py](../models/model.py) 의 `DefSegModel` 구조도.
+[common/models/model.py](../common/models/model.py) 의 `DefSegModel` 구조도.
 모든 텐서 크기는 **입력 1036×1036** 기준이며 `(C, H, W)` 형식 (배치 B 생략).
 
 - Backbone: **DINOv2 ViT-S/14 (frozen)** — `embed_dim D=384`, `patch=14`
