@@ -1,0 +1,9 @@
+class,name,support_px,IoU,precision,recall,top_confused_with,confused_frac
+0,Powder,3251200311,0.9721,0.9998,0.9722,4:Spatter,0.0189
+1,Printed,165642602,0.9160,0.9183,0.9972,3:Swelling,0.0019
+2,Recoater Disturbance,1306179,0.0723,0.0730,0.8848,0:Powder,0.1113
+3,Swelling,855439,0.2916,0.5167,0.4010,1:Printed,0.5988
+4,Spatter,29458447,0.3206,0.3217,0.9897,0:Powder,0.0098
+5,Super-Elevation,2,0.0000,nan,0.0000,3:Swelling,1.0000
+6,Over Melting,0,nan,nan,nan,0:Powder,nan
+7,Debris,0,0.0000,0.0000,nan,0:Powder,nan
