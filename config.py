@@ -1,9 +1,11 @@
-"""DefSeg-AM: DINOv2 + DPT decoder, 2-stage segmentation.
+"""DefSeg-AM v1: DINOv2 + DPT decoder, 2-stage segmentation.
 
 Stage 1 = ORNL HDF5 segmentation_results (DSCNN pred) 으로 KD pretrain.
 Stage 2 = DSCNN_Dataset annotations (human GT) 로 finetune.
 
 자세한 설계는 PLAN.md 참고.
+
+> v2 (8-class + cross-val + DSCNN aug) 는 별도 [DefSeg_AM/v2/](v2/) 폴더에 분리.
 """
 from __future__ import annotations
 
