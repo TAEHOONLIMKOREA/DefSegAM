@@ -23,6 +23,10 @@
 #   # 4) 전체 파이프라인
 #   DEFSEG_PHASE=all docker compose up -d --build
 #
+#   # 5) Confusion matrix (학습 없음, 1-pass) → figures/<run>/v2/...
+#   DEFSEG_PHASE=confusion docker compose up -d --build          # stage1 val/train + stage2 fold5(Maraging)
+#   DEFSEG_PHASE=confusion DEFSEG_EXTRA=--max-batches 2 docker compose up -d --build   # 스모크
+#
 # GPU 선택:
 #   NVIDIA_VISIBLE_DEVICES=2 docker compose up -d --build
 #
@@ -42,7 +46,7 @@ services:
       - HDF5_USE_FILE_LOCKING=FALSE
       - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
       # 실행 제어
-      - DEFSEG_PHASE=${DEFSEG_PHASE:-stage1}        # build_cache|stage1|stage2|infer|all
+      - DEFSEG_PHASE=${DEFSEG_PHASE:-stage1}        # build_cache|stage1|stage2|infer|confusion|all
       - DEFSEG_FOLD=${DEFSEG_FOLD:-0}                # 0..7 또는 'all' (stage2 시)
       - DEFSEG_EXTRA=${DEFSEG_EXTRA:-}               # e.g. "--use-hard-bootstrap --quick"
     volumes:
@@ -108,6 +112,15 @@ services:
             run_stage2_one $$F
           done
         }
+        run_confusion() {
+          # stage1 (val=Build1, train=B2-5) + stage2 fold5 (held-out: v2022_Maraging) 단독
+          $$VENV_PY -u -m DefSeg_AM.v2.inference.confusion \
+            --run-name vits14_dpt_dual_sz1036_8cls_v2 --stage 1 --split val $${DEFSEG_EXTRA}
+          $$VENV_PY -u -m DefSeg_AM.v2.inference.confusion \
+            --run-name vits14_dpt_dual_sz1036_8cls_v2 --stage 1 --split train $${DEFSEG_EXTRA}
+          $$VENV_PY -u -m DefSeg_AM.v2.inference.confusion \
+            --run-name vits14_dpt_dual_sz1036_8cls_v2 --stage 2 --fold 5 $${DEFSEG_EXTRA}
+        }
 
         case "$${DEFSEG_PHASE}" in
           build_cache)
@@ -127,6 +140,9 @@ services:
             run_build_cache
             run_stage1
             run_stage2_all
+            ;;
+          confusion)
+            run_confusion
             ;;
           infer)
             # 단순 sanity infer (사용자 정의 옵션 필요 시 docker exec 로 직접)
