@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Model checkpoints — 큰 binary 파일이라 GitHub repo 에 push 안 함
+checkpoints/
