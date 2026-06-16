@@ -1,0 +1,160 @@
+# DefSeg-AM v4 — 11-class + flip(LR/UD)+rot180+cyclic aug + 전수 학습 (CV 없음)
+#                + 확장 휴리스틱 후처리 + 4-GPU DDP
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/v4/docker
+#
+#   # 1) 캐시 빌드 (label 재매핑, ~5분)
+#   DEFSEG_V4_PHASE=build_cache docker compose up -d --build
+#   docker compose logs -f
+#
+#   # 2) Stage 1 학습 (4-GPU DDP, ~3-4h)
+#   DEFSEG_V4_PHASE=stage1 docker compose up -d --build
+#
+#   # 2-1) Stage 1 with hard-bootstrap
+#   DEFSEG_V4_PHASE=stage1 DEFSEG_V4_EXTRA=--use-hard-bootstrap docker compose up -d --build
+#
+#   # 3) Stage 2 — DSCNN 전수 학습 (4-GPU DDP, ~1-2h)
+#   DEFSEG_V4_PHASE=stage2 docker compose up -d --build
+#
+#   # 4) 전체 파이프라인
+#   DEFSEG_V4_PHASE=all docker compose up -d --build
+#
+#   # 5) Confusion matrix
+#   DEFSEG_V4_PHASE=confusion docker compose up -d --build
+#   DEFSEG_V4_PHASE=confusion DEFSEG_V4_EXTRA=--max-batches\ 2 docker compose up -d --build  # 스모크
+#
+# GPU 선택 (default 0,1,2,3):
+#   NVIDIA_VISIBLE_DEVICES=0,1 NPROC=2 docker compose up -d --build
+#
+services:
+  defseg-am-v4:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/v4/docker/Dockerfile
+    image: defseg-am-v4:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-0,1,2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DEFSEG_V4_PHASE=${DEFSEG_V4_PHASE:-stage1}     # build_cache|stage1|stage2|infer|confusion|all
+      - DEFSEG_V4_EXTRA=${DEFSEG_V4_EXTRA:-}
+      - NPROC=${NPROC:-4}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (원본 HDF5 + DSCNN_Dataset) - read-only
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (backbone weight) - rw
+      # 컨테이너 안에서는 HOME=/tmp 이므로 /tmp/.cache/torch 에 마운트
+      # 한 번 받은 backbone 은 호스트와 공유 → 재실행 시 다시 다운로드 안 함 + DDP race 방지
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[v4] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[v4] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.v4_write_test" 2>/dev/null; then
+          echo "[v4] FATAL: $$OUT 쓰기 실패 — UID/권한 확인" >&2; exit 1
+        fi
+        rm -f "$$OUT/.v4_write_test"
+
+        $$VENV_PY -c "import torch,sys; print(f'[v4] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+
+        echo "[v4] phase=$${DEFSEG_V4_PHASE} nproc=$${NPROC} extra=$${DEFSEG_V4_EXTRA}"
+
+        RUN=vitb14_reg_dpt_dual_sz1036_11cls_v4
+        BACKBONE=dinov2_vitb14_reg
+
+        # ── Backbone prefetch (DDP race 방지) ──
+        # 4-rank 가 동시에 torch.hub.load() 하면 cache 추출/삭제 race condition 발생.
+        # 학습 전 single-process 로 한 번 model 인스턴스화 → cache 채움 → DDP 안전.
+        # 이미 cache 에 있으면 즉시 종료.
+        prefetch_backbone() {
+          echo "[v4] prefetching backbone $$BACKBONE …"
+          $$VENV_PY -c "
+        from DefSeg_AM.common.models.model import DefSegModel
+        m = DefSegModel(backbone_name='$$BACKBONE', n_classes=11)
+        print('[v4] backbone prefetch OK')
+        "
+        }
+
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        run_build_cache() {
+          $$VENV_PY -u -m DefSeg_AM.v4.data.build_cache_v4 --img-size 1036 $${DEFSEG_V4_EXTRA}
+        }
+        run_stage1() {
+          prefetch_backbone
+          ddp -m DefSeg_AM.v4.training.train_stage1 \
+            --epochs 30 --batch-size 4 --img-size 1036 \
+            --backbone $$BACKBONE --num-workers 8 \
+            --class-aware-alpha 1.0 --val-log-every 100 \
+            --run-name $$RUN \
+            $${DEFSEG_V4_EXTRA}
+        }
+        run_stage2() {
+          prefetch_backbone
+          ddp -m DefSeg_AM.v4.training.train_stage2 \
+            --epochs 50 --batch-size 4 --img-size 1036 \
+            --backbone $$BACKBONE --num-workers 4 \
+            --run-name $$RUN \
+            $${DEFSEG_V4_EXTRA}
+        }
+        run_confusion() {
+          $$VENV_PY -u -m DefSeg_AM.v4.inference.confusion \
+            --run-name $$RUN --stage 1 --split val $${DEFSEG_V4_EXTRA}
+          $$VENV_PY -u -m DefSeg_AM.v4.inference.confusion \
+            --run-name $$RUN --stage 1 --split train $${DEFSEG_V4_EXTRA}
+          $$VENV_PY -u -m DefSeg_AM.v4.inference.confusion \
+            --run-name $$RUN --stage 2 --split val $${DEFSEG_V4_EXTRA}
+        }
+
+        case "$${DEFSEG_V4_PHASE}" in
+          build_cache) run_build_cache ;;
+          stage1)      run_stage1 ;;
+          stage2)      run_stage2 ;;
+          all)         run_build_cache; run_stage1; run_stage2 ;;
+          confusion)   run_confusion ;;
+          infer)
+            $$VENV_PY -u -m DefSeg_AM.v4.inference.infer \
+              --run-name $$RUN --stage 2 --tta --postprocess $${DEFSEG_V4_EXTRA}
+            ;;
+          *)
+            echo "[v4] FATAL: unknown DEFSEG_V4_PHASE=$${DEFSEG_V4_PHASE}" >&2
+            exit 1
+            ;;
+        esac
+        echo "[v4] phase=$${DEFSEG_V4_PHASE} done."
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
