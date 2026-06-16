@@ -205,3 +205,42 @@ def v2_cache_dir(img_size: int = IMG_SIZE) -> Path:
 
 # Cross-validation 결과 요약 파일
 CV_SUMMARY_FILE = "cv_summary.json"
+
+
+# ============================================================================
+# v2 — Inference 휴리스틱 후처리 (PP_)
+# ============================================================================
+# 두 규칙. 모든 임계치는 "실 결함이 사라지지 않도록" 보수적으로 설정.
+#
+# 1) PP_STATIC_OUTSIDE_POWDER — 카메라 setup 의 정적 영역 (빌드플레이트 / fixture /
+#    챔버 frame) 이 결함으로 오분류되는 케이스 제거.
+#    조건 (AND, 픽셀 단위): |visible/1 − visible/0| ≤ T_static
+#                       AND  픽셀이 powder ROI 의 바깥
+#    → 해당 픽셀이 결함 (class 2..7) 으로 분류돼 있으면 IGNORE_INDEX 로.
+#
+# 2) PP_SE_SWELLING_FAR_FROM_PART — Super-Elevation / Swelling 의 connected
+#    component 가 Printed (part) 영역으로부터 충분히 멀리 있으면 Debris (7) 로.
+#    부품에서 떨어진 곳의 raised feature 는 사실상 떨어진 입자 (debris).
+
+# ---- 공통 ----
+# uint8 정적 임계 : |i1 − i0| ≤ 이 값이면 "정적" 픽셀.
+# 보수적 = 작게 → 강한 일치만 정적으로 인정 → 환원 픽셀 적음.
+PP_STATIC_DIFF_THRESHOLD = 5
+
+# ---- 규칙 1 : powder ROI 정의 ----
+# Powder ROI = pred ∈ {Powder(0), Printed(1)} 의 largest connected component
+# + closing(구멍 메우기) + dilation. 보수적 = ROI 를 크게 잡아 부품 가장자리의
+# 진짜 결함이 ROI 밖으로 새어 IGNORE 되지 않도록 한다.
+PP_POWDER_ROI_USE_PRINTED = True    # True 면 Powder ∪ Printed, False 면 Powder 만
+PP_POWDER_ROI_CLOSING_PX = 5        # 작은 구멍 메우기
+PP_POWDER_ROI_DILATE_PX = 40        # 보수적 dilation (px)
+
+# ---- 규칙 2 : SE/Swelling → Debris ----
+# Printed mask 에서 component 의 nearest pixel 까지 거리 (px). 이 값을 넘어야
+# Debris 로 재분류. 보수적 = 크게 → 부품에서 확실히 멀리 있을 때만 변경.
+PP_SE_SWELLING_FAR_DISTANCE_PX = 100
+# 너무 작은 component 는 노이즈로 보고 변경 대상에서 제외 (보수적 안전장치)
+PP_SE_SWELLING_MIN_COMPONENT_PX = 30
+# 재분류 대상 / 결과 클래스
+PP_SE_SWELLING_SOURCE_CLASSES = (3, 5)   # 3=Swelling, 5=Super-Elevation
+PP_SE_SWELLING_TARGET_CLASS = 7          # 7=Debris

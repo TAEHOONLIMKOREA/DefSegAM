@@ -16,8 +16,8 @@ panel 구성: [visible/0, visible/1, DSCNN GT argmax (8-class 재매핑), our v2
     # Stage 2 의 fold 0 ckpt 로 한 layer
     python -m DefSeg_AM.v2.inference.infer --run-name <run> --stage 2 --fold 0 --layers 1500
 
-    # Stage 2 의 8 fold ensemble + TTA
-    python -m DefSeg_AM.v2.inference.infer --run-name <run> --stage 2 --ensemble --tta
+    # Stage 2 의 8 fold ensemble + TTA + 휴리스틱 후처리
+    python -m DefSeg_AM.v2.inference.infer --run-name <run> --stage 2 --ensemble --tta --postprocess
 """
 from __future__ import annotations
 
@@ -39,6 +39,7 @@ from ...common.models.model import DefSegModel, round_to_patch
 # v2
 from .. import config_v2 as cfg
 from ..data.data_ornl_v2 import ornl_segmentation_argmax_v2
+from .postprocess import apply_postprocess
 
 
 # v2 8-class 팔레트 (v1 12-class 의 일부 색상 보존)
@@ -54,11 +55,15 @@ _PALETTE_V2 = np.array([
 ])
 
 
+_IGNORE_COLOR = np.array([0.05, 0.05, 0.05])   # 후처리로 IGNORE 된 픽셀
+
+
 def colorize(label: np.ndarray) -> np.ndarray:
-    """v2 8-class label → RGB."""
+    """v2 8-class label → RGB. IGNORE_INDEX 픽셀은 별도 어두운 색."""
     rgb = np.zeros((*label.shape, 3), dtype=np.float32)
     for c in range(cfg.N_CLASSES_V2):
         rgb[label == c] = _PALETTE_V2[c]
+    rgb[label == cfg.IGNORE_INDEX] = _IGNORE_COLOR
     return rgb
 
 
@@ -124,12 +129,15 @@ def infer_layers_to_dir(
     device: torch.device,
     title_prefix: str = "",
     use_tta: bool = False,
+    postprocess: bool = False,
 ) -> None:
     """주어진 models (1 개 또는 ensemble) 로 layer 별 추론.
 
     Args:
         models: ckpt 마다 1 개 model. len(models) > 1 이면 softmax 평균 → ensemble.
         use_tta: True 면 각 model 에 대해 D4 8 변환 softmax 평균
+        postprocess: True 면 휴리스틱 후처리 (정적+ROI외 IGNORE / 부품에서 먼
+            SE·Swelling → Debris) 적용. v2/inference/postprocess.py 참조.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     for m in models:
@@ -155,6 +163,13 @@ def infer_layers_to_dir(
                     probs.append(_forward_prob(m, i0, i1, img_size, device))
             prob = np.mean(probs, axis=0)
             pred = prob.argmax(axis=-1).astype(np.int8)
+
+            if postprocess:
+                pred, pp_stats = apply_postprocess(pred, i0, i1, verbose=False)
+                print(
+                    f"  layer {li}: pp static_ignored={pp_stats['static_ignored']:>7d}  "
+                    f"se_swelling_relabeled={pp_stats['se_swelling_relabeled']:>7d}"
+                )
 
             visualize(
                 i0, i1, gt, pred,
@@ -220,6 +235,10 @@ def main():
                     help="stage=2 시 8 fold ckpt 의 softmax 평균. --fold 와 상호 배타.")
     ap.add_argument("--tta", action="store_true",
                     help="Test-Time Augmentation: D4 group 8 변환 softmax 평균.")
+    ap.add_argument("--postprocess", action="store_true",
+                    help="휴리스틱 후처리 적용: "
+                         "(1) 정적 + powder ROI 밖 → IGNORE, "
+                         "(2) 부품에서 멀리 떨어진 SE/Swelling → Debris.")
     ap.add_argument("--checkpoint", type=str, default=None,
                     help="직접 ckpt 경로 지정 (run-name/stage/fold 무시).")
     ap.add_argument("--build", type=str, default="2021-07-13 TCR Phase 1 Build 1")
@@ -269,7 +288,11 @@ def main():
     # ----- 출력 디렉터리 -----
     if args.out_dir is None:
         sub = "ensemble" if args.ensemble else (f"fold{args.fold}" if args.fold is not None else "single")
-        tag = f"stage{args.stage}_{sub}" + ("_tta" if args.tta else "")
+        tag = (
+            f"stage{args.stage}_{sub}"
+            + ("_tta" if args.tta else "")
+            + ("_pp" if args.postprocess else "")
+        )
         out_dir = cfg.FIGURE_DIR / args.run_name / "v2" / tag / "inference" / args.build.replace(" ", "_")
     else:
         out_dir = Path(args.out_dir)
@@ -278,12 +301,14 @@ def main():
     title_prefix = (
         f"{args.build} / v2-stage{args.stage} / "
         f"{'ensemble' if args.ensemble else ('fold'+str(args.fold) if args.fold is not None else 'single')}"
-        f"{' / TTA' if args.tta else ''} / "
+        f"{' / TTA' if args.tta else ''}"
+        f"{' / PP' if args.postprocess else ''} / "
     )
     infer_layers_to_dir(
         models, hdf5_path, layers, out_dir,
         img_size=img_size, device=device,
         title_prefix=title_prefix, use_tta=args.tta,
+        postprocess=args.postprocess,
     )
 
 

@@ -216,3 +216,74 @@ out = interpolate(out, 1036)                   # (12,1036,1036)
 ```
 입력 dual → DINOv2(frozen)×2 → 차이융합 → 다중해상도 → top-down 융합 → 분류 → 원본 크기
 ```
+
+---
+
+## 9. Inference 휴리스틱 후처리 (v2 only)
+
+Inference 시 모델 argmax 결과를 도메인 규칙으로 한 번 더 정제한다. **학습 / Loss
+와는 무관** — 시각화·평가 단계 직전에 적용. 구현은
+[`v2/inference/postprocess.py`](../v2/inference/postprocess.py), 상수는
+[`v2/config_v2.py`](../v2/config_v2.py) 의 `PP_*` 그룹.
+
+CLI: `python -m DefSeg_AM.v2.inference.infer ... --postprocess`
+
+모든 임계치는 **실 결함이 사라지지 않도록 보수적**으로 설정.
+
+### 9.1 정적 + powder ROI 바깥 → IGNORE
+
+배경: 빌드플레이트 / fixture / 챔버 frame 등 카메라 setup 의 정적 객체가
+Super-Elevation·Debris·Spatter 등 결함 클래스로 오분류되는 경우가 있음. 이런
+영역은 **(a)** visible/0 ↔ visible/1 사이 변화가 거의 없고 **(b)** powder bed
+바깥에 위치한다는 두 특성을 동시에 가진다.
+
+**Powder ROI 정의** (보수적으로 크게)
+- `pred ∈ {Powder(0), Printed(1)}` 의 largest connected component
+- → binary closing (`PP_POWDER_ROI_CLOSING_PX = 5 px`) 으로 작은 구멍 메움
+- → binary dilation (`PP_POWDER_ROI_DILATE_PX = 40 px`) 으로 가장자리 충분히
+  확장 (부품 가장자리의 진짜 결함이 ROI 밖으로 새지 않게)
+
+**환원 조건** (AND, 픽셀 단위)
+- `|visible/1 − visible/0| ≤ PP_STATIC_DIFF_THRESHOLD` (= 5)
+- 픽셀이 Powder ROI 의 **바깥**
+- 픽셀이 결함 클래스 (`pred ∈ {2..7}`)
+
+위 셋 모두 만족하는 픽셀의 라벨을 `IGNORE_INDEX (= -1)` 로 변경. 시각화에서는
+별도 어두운 색으로 표시되어 모델 한계가 드러난다.
+
+**보수성**
+- 정적 임계 5 는 픽셀 노이즈보다 약간 큰 수준 — 강한 일치만 정적으로 인정
+- ROI dilation 40 px 는 ViT-S/14 patch (14) 의 3 배 — 가장자리 결함이 ROI 밖으로
+  빠지는 일이 거의 없음
+
+### 9.2 부품에서 멀리 떨어진 Super-Elevation / Swelling → Debris
+
+배경: 부품에서 멀리 떨어진 powder bed 위의 작은 raised feature 는 본질적으로
+떨어진 입자 (debris) 다. 모델이 이를 Super-Elevation / Swelling 으로 오분류하는
+경우 도메인 규칙으로 Debris(7) 로 재분류.
+
+**판정** (connected component 단위)
+- 대상 클래스: `PP_SE_SWELLING_SOURCE_CLASSES = (3=Swelling, 5=Super-Elevation)`
+- 면적 ≥ `PP_SE_SWELLING_MIN_COMPONENT_PX` (= 30) 인 component 만 (노이즈
+  안전장치)
+- Printed(1) mask 의 nearest pixel 까지 거리 = `min over component`
+- 그 거리가 `PP_SE_SWELLING_FAR_DISTANCE_PX` (= 100) 이상이면 Debris 로 재분류
+
+거리 계산은 `scipy.ndimage.distance_transform_edt` 를 한 번만 호출 (Printed
+mask 의 complement 에 EDT 적용) 하여 O(HW) 로 처리.
+
+**보수성**
+- 거리 임계 100 px (≈ 9.7 mm @ 0.097 mm/px ORNL setup) — 부품에서 확실히 떨어진
+  경우만
+- component 최소 30 px — 작은 노이즈 영역은 손대지 않음
+- component 내 **최소** 거리 사용 (≠ 평균) — 부품에 조금이라도 닿으면 변경 안 함
+
+### 9.3 적용 순서와 영향 범위
+
+1. `remove_static_outside_powder` — 정적+외부 결함 픽셀 IGNORE
+2. `relabel_far_se_swelling_to_debris` — 잔여 SE/Swelling 중 먼 component 를
+   Debris 로
+
+두 규칙 모두 시각화 PNG 와 confusion / IoU 계산에만 영향. 학습된 모델 weight 는
+건드리지 않으며 학습 재실행 불필요. `--postprocess` 옵션이 있을 때만 적용되고,
+출력 디렉터리에 `_pp` suffix 가 붙어 전·후 결과를 나란히 비교 가능.
