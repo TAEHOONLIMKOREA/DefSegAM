@@ -1,0 +1,164 @@
+% =========================================================================
+% Section 1 — Introduction (Korean translation)
+% File: sections/1_introduction.tex  (\input fragment; no \documentclass)
+% Model name: DefectSegAM (exact spelling, everywhere)
+% =========================================================================
+
+\section{서론}
+\label{sec:intro}
+
+금속 적층제조(additive manufacturing, AM)는 시제품 제작 단계를 넘어 본격적인
+양산 단계로 확고히 이동하고 있다. 글로벌 AM 시장은 2023년 200.35억~USD 규모에
+도달하여 전년 대비 11.1\% 성장하였고, 금속 AM 장비는 2022년 3{,}049대에서
+2023년 3{,}793대로 판매량이 증가하였다~\cite{Wohlers2024}. 이를 보완하는 산업
+분석에서는 산업용 AM 시장을 2023년 105.0억~EUR 규모로 평가하고 2028년까지
+연평균 13.9\%의 성장률을 전망하였으며, 금속 AM이 폴리머 AM보다 약 두 배
+빠르게 성장할 것으로 예측하였다~\cite{AMPOWER2024}. 레이저 분말 베드
+융합(laser powder bed fusion, L-PBF; ISO/ASTM 52900 표기로는
+PBF-LB/M)~\cite{ISO52900,Gibson2021AMTech,King2015LPBF}은
+항공우주 및 생체의료 분야에서 높은 가치를 갖는 기하학적 자유도와 함께
+근사 최종 형상(near-net-shape)의 금속 부품을 제작할 수 있기 때문에 이러한
+성장의 상당 부분을 차지한다~\cite{BlakeyMilner2021Aerospace,Bose2018Biomaterials}.
+그러나 동일한 층별 용융 공정은 키홀 기공(keyhole
+porosity)~\cite{King2014Keyhole}, 용융 부족(lack of
+fusion)~\cite{Tang2017LOF}, 스패터(spatter) 비산~\cite{Ly2017Spatter}, 그리고
+리코터--파트 간섭과 같은 확률적 결함 형성에 취약하며, 이러한 결함의 발생은
+국소 형상과 공정 이력에 민감하게 결합되어
+있다~\cite{Sames2016Metallurgy,DebRoy2018PMS}. 그 결과 명목상 동일한 부품이라도
+기계적 성능이 서로 다를 수 있으므로, 오늘날의 인증은 witness 시편의 파괴
+시험과 X-ray computed tomography
+(XCT)~\cite{Seifi2016Qualification,Seifi2017Standardization,duPlessis2018XCT}에
+크게 의존하며, 이러한 부품 단위 검사 부담은 산업적 확산을 가로막는 주요 비용
+장벽으로 널리 지목되고 있다.
+
+레이어 단위 in-situ 이미징은 이러한 부담에 대응할 수 있는 가장 폭넓게 이용
+가능한 수단이다. 산업용 L-PBF 장비는 레이어마다 두 번---레이저 노광 직후 한
+번과 분말 도포 직후 한 번---분말 베드를 촬영할 수 있으므로, 모든 빌드는
+사실상 추가 비용 없이 자기 자신의 제조 과정에 대한 공간적으로 정합된 시각
+기록을 남긴다~\cite{Scime2018Anomaly,Gobert2018InProcess,DebRoy2021NatRevMater,Mahmoud2021LPBFreview}.
+이 기록을 활용하는 여러 방법 가운데 분말 베드 이상 영역의 픽셀 단위 의미
+분할(semantic segmentation)은 두 가지 이유에서 특히 가치가 있다. 첫째, 공정
+제어 측면에서, 픽셀 단위 결함 맵은 도포 및 용융 이상을 빌드 평면과 적층
+방향을 따라 국소화하여 레이어 수준의 개입을 지원하며, 그 클래스별 구조는
+리코터 줄무늬(streaking)와 같은 장비 상태 신호를 과용융·불완전 용융과 같은
+에너지 밀도 신호로부터 분리해 낸다~\cite{Scime2020DSCNN}. 둘째, 물성 예측
+측면에서, Scime 등은 세그멘테이션 맵의 슈퍼복셀(supervoxel) 집계량을 다른
+in-situ 피처와 결합하면 6{,}299개 시편에 걸쳐 국소 인장 특성을 예측할 수
+있음을 보였다~\cite{VPPM_Baseline,ORNL_CoRegistered_Dataset}. 그러나
+세그멘테이션 정보원은 하류의 모든 것을 제한한다.
+Section~\ref{sec:results}에서 보이듯이, 그 외 모든 조건이 동일한 물성 예측
+파이프라인에 배포된 dynamic segmentation convolutional neural network
+(DSCNN)~\cite{Scime2020DSCNN}가 데이터셋에 제공한 결함 채널만을 입력하면
+인장강도(ultimate tensile strength, UTS) 예측의 평균 제곱근
+오차(root-mean-square error, RMSE)가 70.7~MPa로 붕괴하여 단순(naive) 전역 평균
+예측기의 68.4~MPa보다도 나빠지는 반면, 동일한 파이프라인에 본 논문이 제안하는
+모델의 결함 맵을 입력하면 37.5~MPa에 도달한다.
+
+더 나은 분말 베드 세그멘테이션을 가로막는 중심 장애물은 어노테이션 부족이다.
+수 메가픽셀 규모의 레이어 이미지를 전문가가 픽셀 단위로 라벨링하는 작업은
+느리고, 그 결과로 공개된 코퍼스의 규모는 작다: Peregrine v2021-03 릴리스는
+20개의 전문가 어노테이션 L-PBF 레이어를 포함하며~\cite{Peregrine_v2021_03},
+v2022-10 릴리스의 여섯 개 장비--소재 조합은 각각 5개에서 26개의 어노테이션
+레이어를 제공한다~\cite{Peregrine_v2022_10}. 본 연구에서 사용한 여덟 개
+소스를 모두 합해도 사람이 어노테이션한 레이어는 125개에 불과하다. 한편
+이미지의 외관은 장비, 광학계, 조명, 소재에 따라 크게 달라지므로, 한 플랫폼의
+수십 개 레이어만으로 처음부터 학습된 세그멘테이션 네트워크는 심각한 과적합
+위험과 함께, 다른 플랫폼으로 전이될 때 고전적인 데이터셋 시프트(dataset
+shift) 페널티를 동시에 떠안는다~\cite{Quinonero2009DatasetShift,Torralba2011DatasetBias,Pan2010TransferLearning}.
+이에 대한 사실상의 표준적 대응---DSCNN--Peregrine
+계열~\cite{Scime2020DSCNN}과 같이 장비마다 별도의 지도학습 모델을 학습하는
+방식---은 라벨링 비용을 장비 대수만큼 배가시킨다.
+
+본 논문은 고정된(frozen) 자기지도 비전 파운데이션 모델(foundation model) 위에
+구축된 분말 베드 결함 세그멘테이션 모델인 \textbf{DefectSegAM}을
+제안한다(Fig.~\ref{fig:architecture}). 레지스터 토큰(register token)을 갖는
+DINOv2 ViT-B/14 인코더~\cite{Oquab2024DINOv2,Darcet2024Registers}는 전체가
+고정된 채 유지되며, 네 개의 트랜스포머 깊이에서 추출된 피처는 레이어당 두
+장의 이미지(용융 직후와 도포 직후)에 걸쳐 융합되고---이때 베드의 용융 유발
+변화를 인코딩하는 명시적인 이미지 간 차분(difference) 항을 포함한다---DPT
+방식의 다중 스케일 디코더~\cite{Ranftl2021DPT}로 디코딩된다. 고정된 86~M개의
+백본 파라미터 위에서 디코더와 헤드의 14.6~M개 파라미터만이 학습된다. 학습은
+라벨 효율적인 두 단계로 진행된다: Stage~1에서는 ORNL co-registered
+데이터셋~\cite{ORNL_CoRegistered_Dataset}의 다섯 개 빌드 중 네 개에서 추출한
+12{,}607개의 미어노테이션 양산 레이어에 대해, 배포된 DSCNN의 자체 예측을
+비용이 들지 않는 의사 라벨(pseudo-label)로 사용하는 지식 증류(knowledge
+distillation)로 디코더를 사전학습하고, Stage~2에서는 여섯 개의 L-PBF 소스와
+두 개의 바인더 젯팅(binder jetting) 소스에서 취합되어 통일된 11-클래스
+온톨로지(Table~\ref{tab:classes})로 재매핑된 125개의 사람 어노테이션 레이어에
+대해 미세조정한다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. ORNL 코퍼스의
+극단적인 클래스 불균형---약 $1.5\times10^{10}$개의 Powder 픽셀부터 25개의
+Recoater Hopping 픽셀에 이르는---은 역빈도(inverse-frequency) 클래스 인지
+샘플링, Copy-Paste 증강~\cite{Ghiasi2021CopyPaste}, focal
+loss~\cite{Lin2017FocalLoss}로 대응한다. 아울러 Peregrine 데이터셋 어휘에
+혼재된 원인 기준과 외형 기준을 정리하고 ASTM E3353-22 표준
+지침~\cite{ASTME3353}이 예시하는 이상 용어와의 대응을 명시하여, 레이어
+이미지에 나타난 특징을 판정 기준으로 결함을 정의하는 외형
+기준(appearance-based) 분류 체계를 실험과 별도의 제안으로
+제시한다(Section~\ref{sec:method-taxonomy}).
+
+본 연구의 평가 설계에는 방법론적으로 미묘한 쟁점이 반영되어 있다. ORNL 양산
+빌드에서 이용 가능한 밀집 라벨은 그 자체가 DSCNN의 예측이므로, 해당 빌드에서
+계산된 일치도 지표는 세그멘테이션 정확도가 아니라 교사(teacher)에 대한
+충실도를 측정하며, 원리적으로도 학생(student)이 교사를 능가함을 보여줄 수
+없다. 따라서 본 연구는 모든 학습에서 제외된(held-out) 사람 ground truth를
+기준으로 평가한다: (i) Concept Laser M2(L-PBF)와 ExOne Innovent(바인더 젯팅)
+장비의 네 개 빌드에 걸쳐 저자들이 어노테이션한 37개의 이미지 스택을 제공하는
+2025 Peregrine in-situ 모니터링 및 학습
+데이터셋(OSTI~2588140)~\cite{Peregrine_v2025_TODO}, 그리고 (ii) 장비
+간(cross-machine) 일반화를 검증하기 위해 저자들이 현재 수집 및 픽셀 라벨링을
+진행하고 있는 Veltz M160 및 M280 장비와 EOS PBF 장비의 리코팅 이미지가
+그것이다. DefectSegAM과 동일한 데이터로 학습한
+DSCNN~\cite{Scime2020DSCNN}의 충실한 재구현을 주요 베이스라인으로 사용한다. \TODO{held-out 사람 GT 실험과 장비 간
+실험(Tables~\ref{tab:heldout-main} 및~\ref{tab:crossmachine})은 계획되어
+있으나 아직 수행되지 않았다; 결과가 나오는 대로 이 문단에 대표 수치를 삽입할
+것.}
+
+본 연구의 기여는 다음과 같다.
+\begin{enumerate}
+  \item \textbf{아키텍처.} 각 레이어의 도포 직후 이미지와 용융 직후 이미지에
+        공유되는, 레지스터 토큰을 갖는 고정 DINOv2 ViT-B/14 인코더를,
+        명시적 차분 항을 포함하는 단계별(per-stage) 이중 이미지 융합 및 DPT
+        방식 다중 스케일 디코더와 결합한 DefectSegAM을 제안한다. 86~M개의
+        고정 백본 위에서 14.6~M개의 파라미터만이 학습되므로, 시각 표현은
+        플랫폼마다 다시 학습되는 대신 장비와 소재 전반에 걸쳐
+        상각(amortize)된다.
+  \item \textbf{라벨 효율적 2단계 학습.} 배포된 양산 모델로부터의 지식
+        증류(12{,}607개의 의사 라벨 레이어)와, 통일된 11-클래스 온톨로지
+        아래 여덟 개의 이종 장비--소재 소스에서 취합한 단 125개의 사람
+        어노테이션 레이어에 대한 미세조정을 결합하고, 여러 자릿수에 걸쳐
+        차이 나는 클래스별 픽셀 수에는 클래스 인지 샘플링, Copy-Paste 증강,
+        focal loss로 대응한다.
+  \item \textbf{Held-out 사람 GT 평가 프로토콜.} 교사 일치도 함정을 회피하는
+        평가 스위트를 명시한다: 학습에 전혀 사용되지 않은 외부 2025
+        Peregrine 사람 어노테이션 벤치마크, Veltz M160/M280 및 EOS PBF
+        장비의 장비 간 테스트 이미지(수집 및 라벨링 진행 중), 그리고 동일한
+        데이터로 충실히 재구현·학습된 DSCNN 베이스라인이 그것이다.
+        \TODO{프로토콜은 정의되었으나 실험은
+        미수행(Section~\ref{sec:setup}).}
+  \item \textbf{하류 유용성 사례 연구.} 이미 발표된 인장 특성 예측
+        파이프라인 전체를 고정한 채 세그멘테이션 정보원만을 교체하는 실험을
+        통해, 데이터셋이 제공하는 DSCNN 맵은 단순 전역 평균 예측기 아래로
+        붕괴하는 반면(UTS RMSE 70.7 대 68.4~MPa), DefectSegAM 맵은 단순
+        베이스라인 대비 45.2\% 낮은 37.5~MPa에 도달하며 네 가지 인장 특성
+        모두에서 개선을 보임을 확인한다(Table~\ref{tab:downstream}).
+  \item \textbf{외형 기준 결함 분류 체계(부수적 제안).} 실험과 별도로,
+        Peregrine 어휘에 혼재된 원인 기준과 외형 기준을 분리하여 레이어
+        이미지 특징을 판정 기준으로 정의한 결함 8종(Under Melting 처리 확정 전
+        기준)과 배경 2종의 체계를 향후 어노테이션을 위해 제안하고, 기존
+        라벨 공간 및 ASTM E3353-22 용어와의
+        대응(Table~\ref{tab:taxonomy})과 데이터 가용성을
+        정리한다(Section~\ref{sec:method-taxonomy}). 본 논문이 제안하는
+        모델의 모든 정량 결과는 기존 11-클래스 온톨로지로 얻은 것이다.
+        \TODO{제안 체계로 재어노테이션한 뒤 재학습·재평가할
+        것(Section~\ref{sec:method-taxonomy}).}
+\end{enumerate}
+
+본 논문의 나머지 부분은 다음과 같이 구성된다. Section~\ref{sec:related}에서는
+분말 베드 모니터링, ex-situ 라벨 기반 결함 검출, AM 분야의 파운데이션 모델,
+결함-물성 모델링에 관한 관련 연구를 검토한다. Section~\ref{sec:method}에서는
+DefectSegAM의 아키텍처, 제안하는 외형 기준 결함 분류 체계, 학습 레시피, 추론
+파이프라인을 상술한다.
+Section~\ref{sec:setup}에서는 데이터셋, held-out 사람 GT 평가 프로토콜,
+베이스라인을 기술한다. Section~\ref{sec:results}에서는 세그멘테이션 및 하류
+물성 예측 결과를 보고하고, Section~\ref{sec:discussion}에서는 한계와 시사점을
+논의하며, Section~\ref{sec:conclusion}에서 결론을 맺는다.

@@ -221,3 +221,18 @@ __marimo__/
 
 # Model checkpoints — 큰 binary 파일이라 GitHub repo 에 push 안 함
 checkpoints/
+
+# 논문 원고(paper/) — 원고·refs·Figs/*.pdf 는 추적, 빌드 산출물과 재생성 가능한 PNG 는 제외
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.fdb_latexmk
+paper/**/*.fls
+paper/**/*.log
+paper/**/*.out
+paper/**/*.spl
+paper/**/*.synctex.gz
+paper/**/*.toc
+paper/**/main.pdf
+paper/**/Figs/*.png
+paper/**/_backup/

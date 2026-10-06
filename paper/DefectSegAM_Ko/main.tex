@@ -1,0 +1,200 @@
+% =========================================================================
+% DefectSegAM — full-length manuscript for Additive Manufacturing (Elsevier)
+% Korean working copy (internal review). The English submission version will
+% be produced from this file once the content is final; keep sentence
+% structure translation-friendly. Journal-mandated headings (end matter)
+% are kept in English; prose is Korean.
+% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+% Section files live in sections/ and are \input fragments (no preamble).
+% =========================================================================
+\documentclass[preprint,12pt]{elsarticle}
+
+\usepackage{graphicx}
+\usepackage{kotex}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+% Numbered references in order of first citation (elsarticle default;
+% elsarticle-num handles the list format). Compressed citation ranges
+% ([1-3]) can be enabled at submission time with the natbib option
+% "sort" + "compress" via \biboptions{}; it is left off here because the
+% static checker flags the option string's ampersand as a stray '&'.
+
+% ---- Manuscript-wide macros --------------------------------------------
+% Red bracketed TODO marker for planned-but-not-yet-run experiments and
+% metadata that must be verified before submission.
+\newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\journal{Additive Manufacturing}
+
+\begin{document}
+
+\begin{frontmatter}
+
+% Original English title:
+% DefectSegAM: Label-efficient layer-wise defect segmentation for
+% powder bed fusion additive manufacturing with a frozen vision foundation
+% model and cross-machine generalization
+\title{DefectSegAM: 고정(frozen) 비전 파운데이션 모델을 활용한 분말 베드 융합
+적층제조의 라벨 효율적 레이어 단위 결함 분할 및 교차 장비
+일반화\tnoteref{abbr}}
+
+% Elsevier: abbreviations that are not standard in the field are listed in a
+% footnote on the first page and defined again at first use in the text.
+\tnotetext[abbr]{약어: AM, additive manufacturing(적층제조); PBF, powder bed
+fusion(분말 베드 융합); L-PBF, laser powder bed fusion(ISO/ASTM 52900 표기
+PBF-LB/M); BJ, binder jetting; DSCNN, dynamic segmentation convolutional
+neural network; DPT, dense prediction transformer; ViT, vision transformer;
+VPPM, voxel-wise property prediction model; GT, ground truth; IoU/mIoU,
+(mean) intersection-over-union; TTA, test-time augmentation; EMA,
+exponential moving average; DDP, distributed data parallelism; XCT, X-ray
+computed tomography; RMSE, root-mean-square error; YS/UTS/UE/TE, yield
+strength / ultimate tensile strength / uniform elongation / total
+elongation.}
+
+\author[aff1]{Taehoon Lee\corref{cor1}}
+\ead{lth9029@gmail.com}
+\cortext[cor1]{교신저자.}
+% TODO: co-author list to be finalized. Kept as a comment (not \TODO) because
+% elsarticle propagates the \author field into running heads and PDF metadata.
+% TODO: replace the gmail address with an institutional e-mail before
+% submission (journal requirement; see handoff).
+
+\affiliation[aff1]{organization={\TODO{소속
+(학과, 기관)}},
+            city={\TODO{도시}},
+            country={\TODO{국가}}}
+
+\begin{abstract}
+레이어 단위 분말 베드 영상은 분말 베드 융합(powder bed fusion, PBF)
+적층제조에서 가장 널리 사용되는 in-situ 모니터링 방식 중 하나이지만,
+픽셀 단위 결함 분할(defect segmentation)은 전문가가 주석한 이미지의
+부족과 장비, 재료, 카메라 구성 간의 낮은 전이 성능으로 인해 여전히
+제한적이다. 본 연구에서는 고정된(frozen) DINOv2 비전 트랜스포머
+인코더(86\,M 파라미터)에 학습 파라미터가 14.6\,M에 불과한 경량
+dense prediction transformer (DPT) 방식 디코더를 결합하고, 각 레이어의
+용융 직후 이미지와 분말 도포 직후 이미지를 명시적 변화 단서---두 시점
+간의 특징 차이---를 통해 융합하여 11-class 결함 맵을 생성하는
+세그멘테이션 네트워크인 DefectSegAM을 제안한다. 2단계의 라벨
+효율적(label-efficient) 학습 절차는 먼저 운영 세그멘테이션 모델이 의사
+라벨(pseudo-label)을 부여한 12{,}607개 빌드 레이어에서 디코더를
+사전학습한 뒤, 레이저 PBF와 바인더 젯팅(binder jetting)을 아우르는 8개
+장비/재료 소스에서 추출한 단 125개의 전문가 주석 레이어만으로
+미세조정한다. 아울러 실험과는 별도로, 기존 결함 어휘에 혼재된 원인
+기준과 외형 기준을 분리하여 레이어 이미지에 나타난 특징을 판정 기준으로
+정의한 분류 체계를 향후 어노테이션을 위해 제안한다. 평가를
+위해서는 dynamic segmentation convolutional
+neural network (DSCNN) 베이스라인의 충실한 재구현과 비교하는 held-out
+사람
+정답(human ground truth) 프로토콜을 규정하였으며, 이 프로토콜은 레이저
+PBF와 binder jetting을 아우르고 저자들이 현재 수집·픽셀 라벨링 중인
+Veltz M160/M280 및 EOS 장비의 교차 장비(cross-machine) 세트를
+포함한다 \TODO{held-out 세그멘테이션 결과 산출 예정}. 다운스트림
+검증으로서, 그 외 조건이 동일한 인장 특성 예측 파이프라인에서
+데이터셋이 제공하는 DSCNN 맵을 DefectSegAM 출력으로 교체하면
+6{,}373개 시편에 대한 인장강도(ultimate tensile strength)의 평균 제곱근
+오차(root-mean-square error, RMSE)가 70.7\,MPa---단순 전역 평균 예측기의
+68.4\,MPa보다도 나쁜 수준---에서 37.5\,MPa로 감소하며, 이는 단순
+베이스라인 대비 45.2\,\% 감소에 해당함을 확인하였다.
+\end{abstract}
+
+% Research highlights (Elsevier: 3-5 bullets, each <= 85 characters including
+% spaces in the English version; no jargon or abbreviations; submitted as a
+% separate file at submission, rendered here by elsarticle as a preliminary
+% page). English wording for the submission version and its length:
+%  1. A frozen vision foundation encoder and a light decoder segment powder
+%     bed layers                                                        (80)
+%  2. Explicit melt-to-spread change cues fuse the two camera views of every
+%     layer                                                             (76)
+%  3. Pseudo-label pretraining plus fine-tuning on only 125 expert-labelled
+%     layers                                                            (76)
+%  4. Human ground truth never used in training spans laser and binder jet
+%     machines                                                          (77)
+%  5. Swapping the incumbent defect maps cuts tensile strength error from
+%     70.7 to 37.5 MPa                                                  (84)
+\begin{highlights}
+\item 고정된 비전 파운데이션 인코더와 경량 디코더로 분말 베드 레이어의
+      결함을 분할한다
+\item 용융--도포 간 명시적 변화 단서로 각 레이어의 두 카메라 시점을
+      융합한다
+\item 의사 라벨 사전학습에 단 125개 전문가 주석 레이어의 미세조정을
+      결합한다
+\item 학습에 쓰지 않은 사람 정답으로 레이저 및 바인더 젯 장비 전반을
+      평가한다
+\item 기존 결함 맵을 교체하면 인장강도 예측 오차가 70.7에서 37.5\,MPa로
+      낮아진다
+\end{highlights}
+
+% Keywords: at most 6 (Elsevier guidance ranges 1-7; 6 is the safe
+% intersection); ISO/ASTM 52900 process names.
+\begin{keyword}
+적층제조(Additive manufacturing) \sep 레이저 분말 베드
+융합(Laser powder bed fusion) \sep In-situ 모니터링(In-situ monitoring)
+\sep 결함 분할(Defect segmentation) \sep 비전 파운데이션
+모델(Vision foundation model) \sep 딥러닝(Deep learning)
+\end{keyword}
+
+\end{frontmatter}
+
+\input{sections/1_introduction}
+\input{sections/2_related_work}
+\input{sections/3_method}
+\input{sections/4_experimental_setup}
+\input{sections/5_results}
+\input{sections/6_discussion}
+\input{sections/7_conclusion}
+
+% ---- Elsevier-required end matter ---------------------------------------
+% Order follows Elsevier publishing practice: CRediT -> competing interest ->
+% data availability -> acknowledgements -> funding -> generative-AI
+% declaration (immediately before the references, per the June 2026 policy).
+% Headings are the journal's fixed English titles; prose stays Korean.
+
+\section*{CRediT authorship contribution statement}
+\textbf{Taehoon Lee}: Conceptualization, Methodology, Software,
+Investigation, Data curation, Writing -- original draft, Writing -- review
+\& editing. \TODO{저자 명단이 확정된 후 CRediT 명세를 완성할 것.}
+
+\section*{Declaration of competing interest}
+저자들은 본 논문에 보고된 연구에 영향을 미친 것으로 보일 수 있는
+경쟁적 금전적 이해관계나 개인적 관계가 없음을 선언한다.
+
+\section*{Data availability}
+본 연구에서 분석한 데이터는 공개 저장소에서 이용 가능하다. ORNL
+Co-Registered In-Situ and Ex-Situ 데이터셋(Peregrine
+v2023-11)~\cite{ORNL_CoRegistered_Dataset}과 Peregrine 기계학습 릴리스
+v2021-03~\cite{Peregrine_v2021_03}, v2022-10~\cite{Peregrine_v2022_10},
+2025~\cite{Peregrine_v2025_TODO}는 참고문헌에 명시된 DOI를 통해 Oak Ridge
+Leadership Computing Facility 데이터 저장소에서 공개적으로 이용 가능하다.
+저자가 수집 중인 Veltz M160/M280 및 EOS 교차 장비 이미지는 현재 수집이
+진행 중이며, 수집과 라벨링이 완료되는 시점에 그 가용성을 명시할
+예정이다. \TODO{코드 및 학습된 체크포인트의 공개 여부(저장소 URL 또는
+DOI)를 명시할 것; 저자 수집 교차 장비 세트의 최종 가용성을 명시할 것.}
+
+\section*{Acknowledgements}
+\TODO{감사의 글(해당 시)을 추가할 것.}
+
+\section*{Funding}
+\TODO{연구비 출처를 다음 두 형식 중 하나로 명시할 것: (i) ``This work
+was supported by [기관명] [과제번호].''와 함께 후원자의 연구 설계, 자료
+수집·분석·해석, 집필, 투고 결정 관여 여부를 한 문장으로; 또는 (ii)
+``This research did not receive any specific grant from funding agencies in
+the public, commercial, or not-for-profit sectors.''}
+
+\section*{Declaration of generative AI and AI-assisted technologies in the
+manuscript preparation process}
+본 원고를 준비하는 과정에서 저자들은 \TODO{도구/서비스 이름과 버전, 사용
+목적(예: 한국어 초고의 문장 교정과 구조 정리, 영문 번역, LaTeX 정리)을
+확정할 것}을 사용하였다. 이 도구를 사용한 후 저자들은 필요한 내용을
+검토하고 수정하였으며, 출판되는 논문의 내용에 대한 전적인 책임을 진다.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{refs}
+
+\end{document}

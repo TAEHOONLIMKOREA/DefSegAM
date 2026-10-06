@@ -1,0 +1,194 @@
+% =========================================================================
+% Section 2 — Related Work (Korean translation)
+% File: sections/2_related_work.tex  (\input fragment; no \documentclass)
+% Model name: DefectSegAM (exact spelling, everywhere)
+% =========================================================================
+
+\section{관련 연구}
+\label{sec:related}
+
+\subsection{레이어 단위 분말 베드 모니터링과 DSCNN--Peregrine 계열}
+\label{sec:related-monitoring}
+
+초기의 in-situ 모니터링은 결함 검출을 공정 수준의 신호 분류 문제로 다루었다.
+Okaro 등은 49개 인장 바(tensile bar)에서 획득한 광다이오드 신호로
+준지도(semi-supervised) 모델을 학습하여 약 77\%의 성공률로 불량 공정을
+판별하였고~\cite{Okaro2019SemiSup}, Baumgartl 등은 H13 공구강의 off-axis
+적외선 서모그램을 경량 합성곱 네트워크로 분류하여 평균 균형 정확도(mean
+balanced accuracy) 96.8\%를 달성하였다~\cite{Baumgartl2020IRCNN}. 이러한
+분류기는 적시에 경보를 제공하지만 결함을 국소화하지는 못한다. 공간 분해능은
+레이어 단위 분말 베드 촬영 및 용융풀(melt-pool) 이미징과 함께 확보되기
+시작하였다: Scime와 Beuth는 엔지니어링된 컴퓨터 비전 피처로 여섯 가지 분말
+베드 이상 유형을 분류하였고~\cite{Scime2018Anomaly}, Inconel~718에 대해
+용융풀 형태를 키홀 및 balling 영역과 연관지었으며~\cite{Scime2019MeltPool},
+Gobert 등은 다중 모달 통합 후 약 85\%의 정확도로 서포트 벡터 머신을 이용해
+고해상도 레이어 이미지의 불연속(discontinuity)을
+검출하였다~\cite{Gobert2018InProcess}.
+
+Scime 등의 DSCNN~\cite{Scime2020DSCNN}은 이 연구 계열을 여덟 개 클래스
+온톨로지를 갖는 단일한 장비 불특정(machine-agnostic) 픽셀 단위 분말 베드
+세그멘테이션 모델로 통합하였다 \TODO{투고 전에 원저 DSCNN의 학습 데이터
+규모(픽셀, 레이어, 빌드 수)를 2020년 논문과 대조하여 검증할 것}.
+Peregrine 모니터링 플랫폼에 배포되어 ORNL Co-Registered 데이터셋(Peregrine
+v2023-11)~\cite{ORNL_CoRegistered_Dataset}과 함께 제공되는 양산 후속 모델은
+온톨로지를 12개 클래스로 확장하고(recoater hopping, incomplete spreading,
+misprint, under-melting 추가) 모든 레이어에 대해 $1842\times1842$ 크기의
+클래스별 마스크를 생성한다. 이 온톨로지의 클래스는 관찰되는 이미지에
+따라 개략적으로 갓 도포된 분말 베드의 이상(recoater hopping, recoater
+streaking, incomplete spreading, debris), 용융된 표면의 이상(spatter,
+misprint, 키홀 전조로서의 over-melting, lack-of-fusion 전조로서의
+under-melting), 그리고 두 이미지 모두에서 관찰되는 이상(swelling,
+super-elevation)으로 나눌 수 있다. 이 구분은 저자들의 정리이며, 외형
+기준으로 다시 정리한 결과는 Table~\ref{tab:taxonomy}에 제시한다. 함께
+공개된 Peregrine 데이터셋 릴리스는 전문가 어노테이션을 공개하였으나 그
+양은 적다: v2021-03 릴리스에서는
+기술(technology)당 20개의 어노테이션 레이어가~\cite{Peregrine_v2021_03},
+v2022-10 릴리스에서는 여섯 개 장비--소재 조합 각각에 대해 5개에서 26개의
+전문가 어노테이션 학습 레이어가 제공된다~\cite{Peregrine_v2022_10}. 이처럼
+DSCNN--Peregrine 계열은 픽셀 단위 세그멘테이션을 플랫폼 규모 분말 베드
+모니터링의 근간으로 확립하였으나, 이는 수십 개의 라벨링된 레이어에 대한
+장비별 지도학습이라는 비용을 수반한다.
+
+이 계열이 물려준 결함 어휘 자체도 검토가 필요하다. 예컨대 금속 PBF 결함
+리뷰는 결함을 발생 원인과 함께 정의하는 것이 관례이며, Grasso와 Colosimo의
+리뷰는 기공, balling, 기하 변형, 균열과 박리 등의 결함 유형을 각각의 발생
+원인과 연결하여 정리한다~\cite{Grasso2017Review}. 반면 분말 베드 이미지의
+이상 분류는 고해상도 레이어 이미징으로 관찰 가능한 공정 오류를 목록화한
+초기 연구~\cite{zurJacobsmuhlen2013HighRes}와 Scime와
+Beuth~\cite{Scime2018Anomaly} 이래 시각 형상을 기준으로 클래스를 정의해
+왔으나, 그 명칭과 설명에는 여전히 원인이 섞여 있다. ASTM E3353-22 표준
+지침~\cite{ASTME3353}도 공개된 4절(Significance and Use)에서 L-PBF의
+광학·열 in-process 모니터링으로 검출할 분말층 이상의 원인을 리코팅
+오류(skipping, scraping, insufficient powder delivery, part strike)와 파트
+형성 오류(distortion, humping, balling, superelevation)로 범주화하고,
+레이어 이미지에서의 상세 기술은 본 연구가 검토하지 못한 8절(Layer
+Imaging)로 미룬다. 같은 4절은 과열(overheating)·overmelting 항목을 따로
+두어 그 징후로 과열 영역의 변색(scorching)과 humping 등의 표면 변화를
+들고, 과도한
+spatter/ejecta를 그 하위 항목으로 기술한다. 이를 DSCNN--Peregrine 어휘와
+대응시키면 skipping과 insufficient powder delivery는 모두 Incomplete
+Spreading에, scraping은 Recoater Streaking에, part strike는 Recoater
+Hopping에 대응한다. Distortion, humping, superelevation은 Swelling 또는
+Super-Elevation에(humping의 대응은 잠정적이다; Table~\ref{tab:taxonomy}),
+overmelting은 Over Melting에, spatter/ejecta는 Spatter에 대응하며,
+balling에는 L-PBF 클래스 공간에 대응 클래스가 없다(Peregrine v2021-03의
+전자빔 PBF 소스에만 Balling 클래스가 정의되어
+있다~\cite{Peregrine_v2021_03}). 이 범주는 원인 기준이며, 본 연구가 검토한
+공개부는 skipping과 insufficient powder delivery의 레이어 이미지 외형
+차이를 제시하지 않는다. 또한 저자들이 검토한 ORNL
+코퍼스와 사람 어노테이션 코퍼스도 둘을 구분하여 어노테이션하지
+않는다(Section~\ref{sec:method-taxonomy}). 반대로 Incomplete Spreading의
+정의는 분말 도포량 부족이라는 원인만 규정하므로, 얕은 미도포 자국과 분말이
+무너져 내린 형상처럼 외형이 크게 다를 수 있는 이상이 한 용어에 포함될 수
+있다. Peregrine 어휘 역시 외형 기준 클래스에 에너지 밀도라는 원인 기준의
+Over Melting과 Under Melting, CAD 의도 기준의 Misprint를 섞어 쓴다. 또한
+Peregrine v2021-03과 v2022-10 릴리스의 정의는 Swelling과 Super-Elevation을
+모두 파트가 분말 베드 위로 솟은 외형(warps up, extends above the powder
+bed)으로 기술하면서 국소 에너지 과잉과 분말 피복 부족·잔류 응력이라는
+원인 절로만 구분하므로~\cite{Peregrine_v2021_03,Peregrine_v2022_10}, 픽셀
+단위 어노테이션의 판정 기준이 클래스마다 다르다. ORNL Co-Registered
+데이터셋(v2023-11)의 정의는 두 클래스를 이와 다르게 기술하므로 릴리스
+사이에서도 판정 기준이 일치하지 않는다(Section~\ref{sec:method-taxonomy}).
+이러한 원인 기준과 외형 기준의 혼재가 Section~\ref{sec:method-taxonomy}에서
+외형 기준 결함 분류 체계를 제안하는 동기가 된다.
+
+\subsection{Ex-situ ground truth로 지도되는 결함 검출}
+\label{sec:related-exsitu}
+
+이와 병행하는 연구 계열은 사람 어노테이션을 ex-situ 계측, 주로 XCT로
+대체한다. Snow 등은 XCT에서 유도한 결함 라벨로 레이어 단위 영상에 대해
+신경망을 학습하여, 학습 빌드 내에서는 200~$\mu$m보다 큰 결함에 대해 93.5\%의
+정확도를 달성하였으나 미학습 빌드에서는 87.3\%에 그쳤으며, 이는 빌드 간
+일반화 성능 저하를 조기에 정량화한 결과이다~\cite{Snow2021Layerwise}. Wong
+등은 U-Net 계열 모델로 AM XCT 슬라이스의 기공과 균열을 분할하여 도메인 내
+최고 mean intersection-over-union 0.993을 달성하였다~\cite{Wong2022UNet}.
+영상 이외의 정보로는, Estalaki 등이 복셀 수준 열 특징으로부터 SS~304L의
+micro-CT 라벨 기공률을 랜덤 포레스트로 예측하였고(테스트 F1 0.96
+이상)~\cite{Estalaki2022Voxel}, Smoqi 등은 이중 파장 파이로미터로부터 물리
+기반 용융풀 시그니처를 도출하여 기공의 유형과 심각도를 F1 0.95 이상으로
+분류하였다~\cite{Smoqi2022Meltpool}. 최근 연구는 센싱 스택을 다변화하고
+있다: Ero 등은 근적외선 광학 단층촬영(optical tomography)을
+자기조직화지도(self-organizing map) 및 U-Net과 결합하여 EOS M290에서
+lack-of-fusion 및 키홀 기공을 검출하였고~\cite{Ero2023OT}, Kumar 등은
+열화상과 CCD 영상을 설명 가능한 네트워크로 융합하여 정확도를 95\%(열화상
+단독)와 98.28\%(CCD 단독)에서 다중 모달 입력 시 99.72\%까지
+향상시켰다~\cite{Kumar2024MultiSource}. 이들 연구는 도메인 내에서는 우수한
+성능을 달성하지만, 라벨 생산 비용이 높고, 모델이 장비별·소재별로 학습되며,
+Snow 등이 관찰한 바와 같이 표면에서 관측 가능한 단서가 없는 결함은 레이어
+영상만으로는 여전히 검출하기 어렵다~\cite{Snow2021Layerwise}.
+
+\subsection{AM 분야의 파운데이션 모델과 라벨 효율적 세그멘테이션}
+\label{sec:related-foundation}
+
+주류 컴퓨터 비전에서는 자기지도 파운데이션 모델(foundation model)이 태스크별
+피처를 처음부터 학습하는 방식의 대안으로 자리 잡고 있다. DINOv2는 인코더의
+미세조정 없이도 세그멘테이션으로 전이되는 범용 밀집 피처를
+생성하고~\cite{Oquab2024DINOv2}, 레지스터 토큰은 비전 트랜스포머의 밀집 예측
+성능을 저해하는 피처 맵 아티팩트를 제거하며~\cite{Darcet2024Registers},
+dense prediction transformer (DPT)는 여러 트랜스포머 깊이에서 추출한 피처를
+전체 해상도 예측으로 재조립하는 방법을 확립하였다~\cite{Ranftl2021DPT}. AM
+분야에서 이 패러다임은 이제 막 나타나기 시작한 단계이다. Era 등은 프롬프트
+기반(promptable) Segment Anything Model을 L-PBF CoCr XCT 스캔의 기공
+세그멘테이션에 적용하여 태스크별 라벨 없이 Dice 유사도 계수 80\%를
+상회하였고~\cite{Era2025SAM}, Luo 등은 광다이오드 유래 비트맵으로부터의 물성
+예측에 ImageNet 사전학습 ResNet-101 전이학습을
+사용하였다~\cite{Luo2025TransferTi}. 전이학습과 도메인 적응은 분포 시프트에
+대한 고전적 대응이지만~\cite{Pan2010TransferLearning,Quinonero2009DatasetShift,Torralba2011DatasetBias},
+저자들이 아는 한 고정된 자기지도 파운데이션 인코더를 다중 장비 분말 베드 결함
+세그멘테이션---장비, 광학계, 소재 간의 시프트가 곧 장비별 지도학습
+네트워크의 실패 모드가 되는 설정---에 적용한 선행 연구는 없다.
+
+\subsection{결함 맵에서 기계적 물성으로}
+\label{sec:related-property}
+
+금속 AM에서 물성 예측은 오랫동안 명목 공정 파라미터로부터의 회귀를
+의미하였으며, 이러한 접근은 동일한 설정 하에서 발생하는 부품 간·부품 내
+변동을 설명하지
+못한다~\cite{DebRoy2018PMS,DebRoy2021NatRevMater,Mahmoud2021LPBFreview}.
+In-situ 데이터는 이 한계에 대응하지만 파괴 시험 라벨이 희소하므로, 대부분의
+연구는 수십에서 수백 개 수준의 시편을 대상으로 수행된다. Xie 등은 적외선 열
+이력으로부터 directed energy deposition으로 제작한 IN718의 인장강도를
+ResNet-18로 예측하였고(135개 쿠폰에서 $R^2 \approx
+0.7$)~\cite{Xie2021UTSResNet}; Fang 등은 시뮬레이션된 열 이력에 대한 1차원
+합성곱 네트워크로 학습 데이터에서 $R^2 = 0.96$, 테스트 데이터에서 0.67에
+도달하였으며 이는 단일 냉각 속도 지표의 0.32와
+대비된다~\cite{Fang2022Inconel1DCNN}; Moon 등은 CT 기공 통계량과 표면
+조도로부터 L-PBF Ti-6Al-4V의 피로 수명을 예측하였고(Pearson 상관계수
+$\approx 0.94$)~\cite{Moon2021Fatigue}; Luo 등은 전이학습으로 UTS $R^2 =
+0.89$와 연신율 $R^2 = 0.96$을 보고하였다~\cite{Luo2025TransferTi}. Scime
+등의 voxel-wise property prediction model (VPPM)
+프레임워크~\cite{VPPM_Baseline}는 규모 면에서 예외적이다: 약 230~GB
+(${\sim}230$~GB) 규모 공개 데이터셋~\cite{ORNL_CoRegistered_Dataset}의 다섯
+개 빌드에 걸친 6{,}299개의 SS~316L 인장 시편을 대상으로, DSCNN 결함
+마스크에서 유도된 채널을 포함한 21개의 핸드크래프트 피처를 $1 \times 1
+\times 3.5$~mm 슈퍼복셀 단위로 집계하여 물성별 다층 퍼셉트론에 입력하고,
+시편 단위 5-fold 교차검증 하에서 in-situ 정보가 없는 베이스라인 대비 UTS
+예측 오차의 61\% 감소를 보고하였다. 이 프레임워크는 결함 세그멘테이션을
+물성 예측의 입력으로 전환함으로써 세그멘테이션 품질을 하류 유용성으로 측정
+가능하게 만들며, 본 연구는 Section~\ref{sec:results}에서 이 지렛대를
+활용한다.
+
+\paragraph{연구 공백과 본 연구의 위치}
+이러한 연구 계열 전반에서 세 가지 결핍이 두드러지며, 이에 더해 결함 어휘의
+판정 기준 혼재라는 실무적 문제가 있다. 첫째, 분말 베드
+세그멘테이션 모델은 여전히 수십 개의 어노테이션 레이어로 학습되는 장비별
+지도학습 네트워크에 머물러 있으며, 장비와 소재 간에 시각 지식을 공유하는
+메커니즘이 없다. 둘째, 평가가 도메인 내 일치도---배포된 모델의 자체 예측에
+대한, 혹은 학습 분포에서 추출된 라벨에 대한 일치도---에 지배되어, 미확인
+플랫폼으로의 일반화가 held-out 사람 ground truth를 기준으로 정량화되는
+경우는 드물다. 셋째, 결함 맵이 물성 모델의 입력으로 점점 더 많이 사용되고
+있음에도, 세그멘테이션 품질이 물성 예측에 대한 하류 가치로 평가되는 경우는
+거의 없다. 이에 더해 데이터셋의 결함 어휘가 원인 기준과 외형 기준을
+혼합하고 있어, 픽셀 단위 어노테이션의 판정 기준이 클래스마다 다르다.
+DefectSegAM은 세 가지 결핍을 다루며, 어휘의 문제에 대해서는 실험과 별도로
+외형 기준 분류 체계를 제안한다. 고정된 DINOv2 파운데이션
+인코더는 시각 표현을 여덟 개 장비--소재 소스에 걸쳐 상각하면서 14.6~M
+파라미터의 디코더만을 학습하고; 12{,}607개 양산 레이어에 대한 의사 라벨
+사전학습은 배포된 DSCNN을 경쟁자에서 비용이 들지 않는 교사로 전환하며,
+미세조정은 여섯 개의 L-PBF 소스와 두 개의 바인더 젯팅 소스에 걸친 125개의
+사람 어노테이션 레이어를 취합하고; 평가 프로토콜은 학습에서 한 번도 보지
+못한 장비의 이미지---그 수집과 라벨링이 진행 중이다---를 포함하는 held-out
+사람 GT 벤치마크와, 세그멘테이션 정보원만을 유일한 변경 요소로 하는 하류
+인장 특성 사례 연구를 결합한다. 마지막으로, 어휘 문제에 대한 응답인 외형 기준
+결함 분류 체계는 픽셀 어노테이션의 판정 기준을 통일하기 위한 제안이며, 본
+논문의 어떤 결과에도 사용되지 않았다.

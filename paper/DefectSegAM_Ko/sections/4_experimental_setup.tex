@@ -1,0 +1,343 @@
+% =========================================================================
+% Section 4 — 실험 설정 (\input fragment; preamble 없음)
+% =========================================================================
+\section{실험 설정}\label{sec:setup}
+
+본 장에서는 DefectSegAM의 두 가지 학습 코퍼스(\ref{sec:setup-corpora}절),
+모든 학습에서 엄격히 제외되는 held-out 사람 어노테이션 평가 세트
+(\ref{sec:setup-heldout}절), 베이스라인 세그멘테이션 모델
+(\ref{sec:setup-baselines}절), 평가 지표 및 human GT(사람 어노테이션 정답)
+기준 정확도와 DSCNN 일치도(agreement-with-DSCNN) 간의 구분
+(\ref{sec:setup-metrics}절), 그리고 2단계 학습 레시피의 구현 세부사항
+(\ref{sec:setup-impl}절)을 기술한다. 표~\ref{tab:datasets}는 held-out
+세트를 포함하여 본 연구에서 사용한 모든 코퍼스를 요약한 것이다.
+
+\subsection{학습 코퍼스}\label{sec:setup-corpora}
+
+\subsubsection{Stage-1 사전학습 코퍼스: DSCNN 의사 라벨(pseudo-label)을
+사용하는 ORNL SS~316L 5-빌드 데이터셋}\label{sec:setup-stage1-corpus}
+
+Stage-1 사전학습에는 공개된 Co-Registered In-Situ and Ex-Situ 데이터셋
+(Peregrine v2023-11)~\cite{ORNL_CoRegistered_Dataset,VPPM_Baseline}을
+사용한다. 이 데이터셋은 Oak Ridge National Laboratory (ORNL)
+Manufacturing Demonstration Facility에서 두 개의 400~W 레이저 모듈,
+compliant recoater blade, 아르곤 보호가스 분위기를 갖춘 Concept Laser
+M2 L-PBF 장비(General Electric Additive)로 취득되었다. 원료 분말은
+SS~316L 분말(TruForm, Praxair; 입도 D10 20~\(\mu\)m, D50 31~\(\mu\)m,
+D90 43~\(\mu\)m)이며, 50~\(\mu\)m 레이어 두께로 적층되었다. 이 릴리스는
+B1.1--B1.5의 다섯 개 빌드로 구성되며, 총 6{,}299개의 인장 시편과 약
+230~GB의 HDF5 데이터를 포함하고 CC~BY~4.0 라이선스로 배포된다. 다섯 개
+빌드는 서로 다른 공정 영역을 의도적으로 포괄하도록 구성되었다: B1.1은
+nominal 조건에서 출력되었고(503개 시편); B1.2는 Nominal, Best,
+lack-of-fusion, keyhole의 네 가지 파라미터 세트를 하나의 빌드 안에
+혼합하였으며(2{,}705개 시편); B1.3은 30\(^{\circ}\) 오버행 형상을
+포함하고(813개 시편); B1.4는 아르곤 유량을 25--40~m\(^{3}\)/h 사이에서
+변화시켜 스패터 증가를 유발하였으며(694개 시편); B1.5는 의도적으로
+손상시킨 recoater blade와 5\%--200\% 사이에서 변화시킨 분말 부족 공급
+도징 조건에서 출력되었다(1{,}584개 시편). 이러한 공정 영역의 다양성은
+모델이 단일 nominal 조건이 아니라 자연적으로 발생하는 광범위한
+powder-bed 이상(anomaly)에 노출되도록 한다.
+
+모든 레이어는 DefectSegAM의 dual 입력(\ref{sec:method}절)을 구성하는 두
+장의 co-registered 가시광 이미지를 제공한다: 용융 직후 이미지 \(I_0\)
+(HDF5 키 \texttt{slices/camera\_data/visible/0})와 분말 도포 이미지
+\(I_1\)(\texttt{visible/1})이며, 각각 \(1842 \times 1842\)~px float32
+배열로 저장되어 있다. 다섯 개 빌드에 대해 데이터셋은 각각 3{,}575,
+3{,}561, 3{,}297, 3{,}574, 3{,}575개의 레이어를 포함하며, 총 17{,}582개
+레이어이다.
+
+이 빌드들에는 사람이 작성한 픽셀 어노테이션이 존재하지 않으므로,
+Stage~1은 데이터셋에 포함된 세그멘테이션 마스크
+(\texttt{slices/segmentation\_results})로부터의 지식 증류(knowledge
+distillation)로 학습한다. 이 마스크는 ORNL의 Peregrine 플랫폼에 배치된
+프로덕션 DSCNN 세그멘테이션 모델이 예측한 레이어당 12개의 불리언
+채널이다~\cite{Scime2020DSCNN}. 본 연구에서는 이 채널들에 대해 12개
+클래스에 대한 픽셀 단위 argmax를 적용하여 hard 의사 라벨(pseudo-label)로
+변환하고, 이를 DefectSegAM의 11-클래스 온톨로지(표~\ref{tab:classes})로
+매핑한다; Misprint 클래스는 ignore index \(-1\)로 매핑되어 손실 계산에서
+제외되며, 나머지 11개 클래스는 일대일로 매핑된다. 이 라벨들이 정답
+(ground truth)이 아니라 다른 모델의 예측이라는 점을 강조해 둔다; 이
+선택이 평가에 미치는 영향은 \ref{sec:setup-metrics}절에서 논의한다.
+
+빌드 B1.2--B1.5는 Stage-1 학습 분할을 구성하며, 빌드 B1.1은 고정 검증
+빌드로 유보한다. 학습 파이프라인의 레이어 선별 정책에 따라 각 빌드
+레이어의 내측 5\%--95\% 구간만 사용하고 의사 라벨에 결함 픽셀이 전혀
+없는 레이어는 제외하며, 그 결과 B1.1--B1.5에 대해 각각 3{,}218,
+3{,}204, 2{,}968, 3{,}217, 3{,}218개의 레이어가 유지된다(총 15{,}825개
+레이어). 그 결과 Stage-1 분할은 12{,}607개의 학습 레이어(B1.2--B1.5)와
+3{,}218개의 검증 레이어(B1.1)를 포함한다.
+
+\subsubsection{Stage-2 미세조정 코퍼스: 다중 장비 사람 어노테이션
+데이터셋}\label{sec:setup-stage2-corpus}
+
+Stage-2 미세조정에는 공개 Peregrine 데이터셋 릴리스
+v2021-03~\cite{Peregrine_v2021_03}과 v2022-10~\cite{Peregrine_v2022_10}의
+전문가 픽셀 단위 정답 어노테이션을 사용한다. 총 여덟 개의 소스를
+사용하며, 이는 여섯 개의 L-PBF 소스와 두 개의 binder-jet 소스로
+구성되고 표~\ref{tab:datasets}에 개별적으로 나열되어 있다. L-PBF 소스는
+SS~316L을 출력하는 Concept Laser M2(어노테이션 20개 레이어, 레이어당
+2장의 5~MP 가시광 촬영), 17-4~PH 스테인리스강을 출력하는 EOS M290
+(14개 레이어; 1~MP 가시광), 니켈 합금 GammaPrint-700(9개 레이어;
+thermally-imaged near-infrared 및 가시광), 두 가지 서로 다른 카메라
+구성의 Inconel~718(각 5개 및 24개 레이어), 그리고 maraging steel을
+출력하는 AddUp FormUp 350(26개 레이어; 0.3~MP microbolometer 적외선 및
+5~MP 가시광)을 포괄한다. 두 개의 binder-jet 소스는 SiC, B\(_4\)C,
+H13 강을 출력하는 ExOne Innovent 및 Innovent+ 장비(20개 레이어, 20~MP
+가시광)와 H13 공구강을 출력하는 ExOne M-Flex(7개 레이어, 1~MP 적외선
+및 20~MP 가시광)를 포괄한다. Stage-2 코퍼스는 총 125개의 전문가
+어노테이션 레이어를 포함하며, 이 중 98개는 여섯 개 L-PBF 소스에서,
+27개는 두 개 binder-jet 소스에서 나온 것이다. 정답 마스크는 주로 프린터
+기술자인 도메인 전문가가 라벨링하였으며, 라벨링되지 않은 픽셀은
+\(-1\)로 인코딩되어 있다. v2021-03 릴리스의 전자빔 PBF 하위 집합
+(Arcam Q10/Q10+, 어노테이션 20개 레이어)은 본 연구에서 사용하지 않는다.
+
+각 소스는 고유한 native 클래스 어휘를 가진다(장비와 릴리스에 따라
+6개에서 15개 사이의 클래스). 모든 native 라벨은 소스별 매핑 사전을
+사용하여 native 클래스~\(\rightarrow\)~ORNL 12-클래스
+공간~\(\rightarrow\)~11-클래스 DefectSegAM 온톨로지의 2단계로
+재매핑된다; 예를 들어 ``Excessive Melting''은 Over Melting으로,
+``Localized Dark Regions''는 Under Melting으로 매핑되고, ORNL
+온톨로지에 대응 클래스가 없는 native 클래스(예: ``Stripe Boundary'',
+``Crashing'', ``Soot'')는 ignore index로 매핑되어 손실 계산에서 제외된다.
+Stage~2에서는 소스에 대한 교차검증 없이 여덟 개 소스를 모두 함께
+학습하며, 여덟 개 소스의 균형을 맞추는 샘플링 방식은
+\ref{sec:setup-impl}절에서 기술한다.
+
+\begin{table}[t]
+\centering
+\caption{본 연구에서 사용한 모든 코퍼스의 개요. Stage-1 라벨은
+데이터셋에 포함된 DSCNN 예측 마스크의 픽셀 단위 argmax로 얻은 의사
+라벨(pseudo-label)이며~\cite{Scime2020DSCNN}, 그 외 모든 라벨은
+전문가의 픽셀 단위 어노테이션(human GT)이다. VL = 가시광(visible
+light), IR = 적외선(infrared), TI-NIR = thermally-imaged near-infrared,
+BJ = binder jetting. 어떠한 held-out 소스도 학습 단계에는 등장하지
+않는다. ``---''로 표시된 셀은 수집 또는 검증이 아직 진행 중인 계획
+데이터에 해당한다(\TODO{held-out 세트가 확정되면 채울 것}).}
+\label{tab:datasets}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lllllr@{}}
+\toprule
+소스 & 공정 & 장비 & 재료 & 촬영 & 레이어 수 \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Stage-1 사전학습 (DSCNN pseudo-label)
+\cite{ORNL_CoRegistered_Dataset}}}\\
+ORNL B1.1--B1.5 (v2023-11) & L-PBF & Concept Laser M2 & SS 316L & VL, 2장/레이어
+  & 12{,}607 / 3{,}218\(^{\ast}\) \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Stage-2 미세조정 (human GT)
+\cite{Peregrine_v2021_03,Peregrine_v2022_10}}}\\
+v2021 L-PBF        & L-PBF & Concept Laser M2   & SS 316L            & VL, 2장/레이어   & 20 \\
+v2022 17-4 PH      & L-PBF & EOS M290           & 17-4 PH stainless  & VL            & 14 \\
+v2022 GammaPrint   & L-PBF & EOS M290           & GammaPrint-700 (Ni) & TI-NIR + VL  & 9 \\
+v2022 Inconel 718 (1) & L-PBF & EOS M290        & Inconel 718        & TI-NIR + VL   & 5 \\
+v2022 Inconel 718 (2) & L-PBF & EOS M290        & Inconel 718        & VL            & 24 \\
+v2022 Maraging     & L-PBF & AddUp FormUp 350   & Maraging steel     & IR + VL       & 26 \\
+v2021 BJ           & BJ    & ExOne Innovent (\(\times 2\)), Innovent+ & SiC / B\(_4\)C / H13 & VL & 20 \\
+v2022 BJ H13       & BJ    & ExOne M-Flex       & H13 tool steel     & IR + VL       & 7 \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Held-out human GT 평가 (학습에 전혀
+사용되지 않음)}}\\
+2025 Peregrine (OSTI 2588140) & L-PBF + BJ & Concept Laser M2; ExOne
+  Innovent & --- & VL, 레이어 단위 & 37\(^{\dagger}\) \\
+저자 수집 (계획) & PBF & Veltz M160; Veltz M280; EOS PBF & ---
+  & VL (recoating) & --- \\
+\bottomrule
+\multicolumn{6}{@{}l}{\footnotesize \(^{\ast}\)레이어 필터링 후의
+학습/검증 레이어 수 (원본 전체 17{,}582개 레이어).}\\
+\multicolumn{6}{@{}l}{\footnotesize \(^{\dagger}\)4개 빌드에 걸친 저자
+어노테이션 이미지 스택(프린트 레이어) 수.}\\
+\end{tabular}
+\end{table}
+
+\subsection{Held-out human GT 평가 세트}
+\label{sec:setup-heldout}
+
+본 논문의 모든 정량적 정확도 주장은 전문가 픽셀 단위 어노테이션을 갖춘
+held-out 세트에서 이루어진다. 본 연구는 엄격한 분리 규칙을 적용한다:
+어느 학습 단계에든 등장하는 이미지, 빌드, 소스는 held-out 평가에 절대
+사용하지 않으며, 반대로 어떠한 held-out 소스도 학습에 단 한 픽셀도
+기여하지 않는다.
+
+\paragraph{(i) 외부 2025 Peregrine 세트}
+첫 번째 held-out 세트는 2025 Peregrine in-situ 모니터링 및 학습
+데이터셋(OSTI 2588140)~\cite{Peregrine_v2025_TODO}으로, Concept Laser
+M2 L-PBF 장비와 ExOne Innovent binder-jet 장비에서 취득한 HDF5 형태의
+네 개 빌드와 37개의 저자 어노테이션 이미지 스택(프린트 레이어)으로
+구성된다. 이 릴리스는 가시광 레이어 단위 촬영 외에도 레이저 스캔
+경로와 파라미터, 시계열 센서 데이터, 인장 시험 결과, 파트 형상을
+포함한다. 이 데이터셋은 본 프로젝트의 어떠한 학습 단계에서도 사용된
+적이 없으며, 따라서 완전히 외부의 human GT 테스트 세트 역할을 한다.
+\TODO{OSTI 2588140 라벨 온톨로지가 12-클래스 Peregrine 공간과
+호환되는지 검증하고, 평가 전에 적용한 재매핑(있는 경우)을 문서화할 것.}
+이 세트에 대한 주요 held-out 비교는 표~\ref{tab:heldout-main}에 보고할
+예정이다.
+
+\paragraph{(ii) 저자 수집 cross-machine 세트}
+두 번째 held-out 세트는 cross-machine 일반화 평가를 위해 저자들이 직접
+수집하고 픽셀 라벨링을 진행 중인 새로운 다중 장비 코퍼스로, Veltz
+M160 및 M280 장비(Veltz, Republic of Korea)의 recoating(분말 도포)
+이미지와 EOS PBF 장비의 레이어 단위 이미지로 구성된다. 이 세 장비와
+그 카메라 구성은 어떠한 학습 코퍼스에도 등장하지 않으므로, 이 세트는
+알려진 장비의 빌드 간 일반화가 아니라 프린터 제조사, 광학계, 조명
+조건에 걸친 일반화를 검증한다. \TODO{수집이 완료되면 라벨링된 레이어
+수, 재료, 카메라 사양, 그리고 픽셀 라벨링 프로토콜(어노테이터 수,
+도구, 판정 절차)을 보고할 것.}
+Cross-machine 결과는 표~\ref{tab:crossmachine}에 보고할 예정이다.
+
+\subsection{베이스라인}\label{sec:setup-baselines}
+
+\paragraph{DSCNN 재구현}
+주요 베이스라인은 Scime 등~\cite{Scime2020DSCNN}의 DSCNN을 충실하게
+재구현한 모델로, DSCNN은 Peregrine 모니터링 플랫폼에 배치된 픽셀 단위
+powder-bed 세그멘테이션 네트워크이자 Stage~1에서 사용한 의사 라벨의
+출처이다. 원 모델은 공개되어 있지 않으므로, 원 논문의 서술로부터
+아키텍처를 재구성하고 DefectSegAM과 정확히 동일한 데이터
+(\ref{sec:setup-corpora}절의 Stage-1 및 Stage-2 코퍼스)로 학습할
+예정이며, 이를 통해 비교가 학습 데이터가 아니라 모델 자체를 분리하여
+평가하도록 한다. 이후 두 모델을 \ref{sec:setup-heldout}절의 동일한
+held-out human GT 세트에서 비교할 예정이다.
+\TODO{원 논문으로부터 DSCNN의 정확한 하이퍼파라미터(레이어 구성, 입력
+패치 처리, 옵티마이저, 스케줄)를 옮겨 적고, 본 연구의 데이터
+파이프라인으로 인해 불가피했던 변경 사항을 명시할 것.}
+
+\paragraph{표준 세그멘테이션 베이스라인 (선택 사항)}
+일반적인 semantic segmentation 아키텍처 대비 DefectSegAM의 위치를
+확인하기 위해, 동일한 2단계 데이터 체제에서 표준 인코더--디코더
+베이스라인인 U-Net~\cite{Ronneberger2015UNet}과
+DeepLabV3+~\cite{Chen2018DeepLabV3Plus}를 추가로 학습할 계획이다.
+비학습 베이스라인은 비교 대상에 포함하지 않는다. 엔지니어링된 컴퓨터
+비전 피처에 기반한 초기 분말 베드 이상 검출
+방법~\cite{Scime2018Anomaly,Gobert2018InProcess}은 패치 또는 영역
+단위의 분류에 머물러 11개 클래스에 대한 픽셀 단위 라벨맵을 산출하지
+못하며, 바로 이 한계가 학습 기반 픽셀 단위 세그멘테이션
+모델(DSCNN)~\cite{Scime2020DSCNN}이 도입된 이유이기 때문이다.
+\TODO{표준 베이스라인의 최종 구성과 학습 예산을 결정할 것; 이 실험들은
+선택 사항이며 아직 수행되지 않았다.}
+
+\subsection{평가 지표}\label{sec:setup-metrics}
+
+세그멘테이션 품질은 다중 클래스 confusion matrix로부터 계산되는 픽셀
+수준 지표로 측정하며, 모든 ignore index 픽셀(라벨 \(-1\))은 제외한다.
+각 클래스 \(c\)에 대해 intersection-over-union
+\(\mathrm{IoU}_c = \mathrm{TP}_c/(\mathrm{TP}_c + \mathrm{FP}_c +
+\mathrm{FN}_c)\)를 per-class precision 및 recall과 함께 보고한다. 전체
+성능은 (i) 평가 세트에서 support가 0이 아닌 모든 클래스에 대한 mIoU와,
+(ii) 아홉 개 결함 클래스(Powder와 Printed를 제외한 모든 클래스)만을
+대상으로 평균한 \emph{defect-only} mIoU로 요약한다. 후자는 두 지배적인
+배경 클래스가 본 연구의 동기가 되는 희소 이상 클래스에 대한 성능을
+가리는 것을 방지한다. mIoU 평균을 support가 0이 아닌 클래스로 제한하는
+것은 개별 빌드에 특정 클래스 전체가 결여될 수 있기 때문에 필요하다;
+예를 들어 ORNL 빌드 B1.1은 11-클래스 DefectSegAM 매핑 하에서 Recoater
+Hopping, Debris, Over Melting 픽셀이 사실상 존재하지 않고
+Super-Elevation 픽셀도 단 두 개뿐이므로, B1.1만을 대상으로 11개 클래스
+전체에 대해 평균하는 것은 무의미하다. 맥락 제공을 위해 전체 픽셀
+정확도를 추가로 보고한다.
+
+본 논문의 핵심 방법론적 논점은 이러한 지표가 산출할 수 있는 두 부류의
+수치를 구분하는 것이다. \emph{Human GT 정확도}는 기준 마스크가 전문가
+픽셀 어노테이션인 경우---즉 Stage-2 코퍼스와 \ref{sec:setup-heldout}절의
+held-out 세트---에 얻어지며, 본 연구에서 세그멘테이션 정확도로 해석하는
+유일한 수치이다. \emph{DSCNN 일치도(agreement-with-DSCNN)}는 기준
+마스크가 ORNL 빌드에 대해 데이터셋에 포함된 DSCNN 예측인 경우에
+얻어진다; 이 마스크 자체가 모델의 출력이므로, 높은 값은 정확성이
+아니라 프로덕션 DSCNN teacher와의 일관성을 나타내며, teacher가 신뢰할
+수 없는 클래스에서의 낮은 값이 실패를 의미하는 것도 아니다. DSCNN
+일치도는 학습 중 모델 선택(\ref{sec:setup-impl}절)과 모델 버전 간 내부
+비교에만 사용하며, 해당 수치는 \ref{sec:results}절에서 모두 명시적으로
+표기한다. 결함 탐지 품질에 관한 모든 결론은 오직 human GT 평가로부터만
+도출한다.
+
+\subsection{구현 세부사항}\label{sec:setup-impl}
+
+DefectSegAM은 PyTorch 2.9.1(CUDA 12.8)로 구현하였다. register token을
+갖는 DINOv2 ViT-B/14 백본~\cite{Oquab2024DINOv2,Darcet2024Registers}
+(86\,M 파라미터)은 Meta AI의 공식 릴리스(torch.hub
+\texttt{facebookresearch/dinov2}, 모델명
+\texttt{dinov2\_vitb14\_reg})에서 로드하여 전 과정에서 동결(frozen)하며,
+DPT 스타일 fusion/decoder/head~\cite{Ranftl2021DPT}(14.6\,M 파라미터)
+만 학습하고 체크포인트에는 학습 대상 모듈만 저장한다. 두 입력 이미지는
+모두 \(1036 \times 1036\)~px로 처리되며, 이는 14-px 패치의
+\(74 \times 74\) 그리드에 해당한다.
+
+모든 학습은 네 개의 NVIDIA GeForce RTX 5090 GPU(각 32~GB)를 갖춘 단일
+노드에서 4-way 분산 데이터 병렬화(DDP; \texttt{torchrun}, GPU당 1
+프로세스)를 사용하며, GPU당 배치 크기 4(유효 배치 크기 16), 완전한
+FP32 정밀도(automatic mixed precision 미사용)로 수행한다. 옵티마이저는
+weight decay \(10^{-4}\)의 AdamW이며, 최대 학습률은
+\(2.83 \times 10^{-4}\)---GPU당 배치를 2에서 4로 두 배로 늘리면서
+\(2 \times 10^{-4}\)의 기준 학습률을 제곱근 스케일링하여 얻은 값---로
+이후 0까지 cosine decay를 적용하고, gradient norm은 1.0에서
+클리핑한다. 학습 대상 가중치에 대해 decay 0.9999의 EMA를 유지하며,
+검증과 best 체크포인트 저장에는 항상 EMA 가중치를 사용한다.
+
+\emph{Stage 1(지식 증류 사전학습)}은 200-스텝 선형 warmup(전체 스텝의
+1/4로 상한)과 함께 30 에폭 동안 수행한다. 손실 함수는
+\(\gamma = 2.0\)의 focal loss~\cite{Lin2017FocalLoss}이며, 500개의
+샘플링된 학습 레이어로부터 추정한, 10에서 클리핑된 제곱근 역빈도
+(square-root inverse-frequency) 클래스 가중치를 사용한다. 레이어는
+\ref{sec:method}절에서 기술한 class-aware 가중(\(\alpha = 1\), 엄격한
+픽셀 역빈도)을 사용하는 복원추출 분산 가중 샘플러로 추출하며, 희소
+클래스 Copy--Paste 증강~\cite{Ghiasi2021CopyPaste}을 확률 0.5로 적용한
+뒤 \ref{sec:method}절의 기하학적·광도학적 증강을 적용한다. best
+체크포인트는 3{,}218개 레이어 전체의 빌드 B1.1 검증 분할에서 픽셀
+정확도가 가장 높은 에폭으로 선택한다(DSCNN 일치도 기준,
+\ref{sec:setup-metrics}절 참조).
+
+\emph{Stage 2(human GT 미세조정)}는 학습 대상 모듈을 Stage-1 best
+체크포인트로부터 초기화하되 옵티마이저는 리셋하며, 50-스텝 warmup과
+고정 랜덤 시드 42로 50 에폭 동안 수행한다. 손실 함수는 동일한 제곱근
+역빈도 가중 방식(클리핑 10)을 Stage-2 코퍼스의 클래스 빈도로부터
+재계산한 가중 cross-entropy이다; 샘플러는 여덟 개 Stage-2 소스에 대한
+소스 균형 가중치를 class-aware 가중치와 곱하여 사용하며, 각 고유
+샘플은 독립적으로 추출된 증강과 함께 에폭당 \(K = 4\)회 복제된다. 모델
+선택에는 빌드 B1.1 검증 분할의 200-레이어 균일 서브샘플에 대한 mIoU를
+사용하며, 이 역시 DSCNN 일치도 기준이다. 이 구성에서 학습은 GPU당 약
+20~GB의 메모리를 점유하며, 문서화된 실행 시간 추정치는 이 4-GPU
+노드에서 Stage~1이 약 3--4~h, Stage~2가 약 1--2~h이다.
+\TODO{Elsevier 기계학습 논문 요구사항에 따라, 최종값에 이르기까지
+탐색한 하이퍼파라미터 범위(학습률, 배치 크기, warmup 길이, 에폭 수,
+클래스 가중치 clip, 복제 횟수 \(K\), Copy-Paste 확률 등)와 각 최종값의
+선택 근거, 그리고 과적합 여부를 판단한 검증 곡선을 보고할 것.}
+
+별도로 명시하지 않는 한, 보고되는 모든 결과는 TTA나 후처리 없이
+레이어당 단일 forward pass를 사용한다. DefectSegAM은 선택적으로 8-way
+TTA(수평 뒤집기, 수직 뒤집기, \(180^{\circ}\) 회전의 모든 조합을
+softmax 확률 수준에서 평균)와 \ref{sec:method}절에서 기술한 두 가지
+추론 전용 후처리 규칙을 지원하며, 이들의 개별 기여는 ablation 연구
+(표~\ref{tab:ablation}의 추론 시 옵션 행)에서 정량화할 예정이다.
+
+\subsection{다운스트림 물성 예측 설정}
+\label{sec:setup-downstream}
+
+\ref{sec:results-downstream}절의 다운스트림 사례 연구는 Scime
+등~\cite{VPPM_Baseline}의 VPPM 프로토콜을 따른다. 각 시편은
+\(1 \times 1 \times 3.5\)~mm 슈퍼복셀로 분할한다; 슈퍼복셀은 시편의
+gauge 영역 내부에 위치하고 모든 피처 채널이 유한한 값일 때 유효한
+것으로 간주하며, 그 결과 19{,}313개의 유효 슈퍼복셀을 얻는다. 모든
+세그멘테이션 채널은 동일한 방식으로 집계한다: 레이어별 이진 클래스
+마스크를 표준편차 0.5~mm(원본 카메라 해상도에서 \(\sigma = 3.76\)~px)
+의 가우시안 필터로 평활화하고, 평활화된 값을 레이어에 걸친 CAD 픽셀
+수 가중과 함께 슈퍼복셀에 대해 평균한다. \emph{DSCNN 기반} 변형은 원래
+VPPM의 세그멘테이션 피처 그룹을 구성하는 데이터셋 제공 8개 채널
+(Powder, Printed, Recoater Streaking, Swelling, Debris,
+Super-Elevation, Spatter, Over Melting---즉 원래 8-클래스 DSCNN의 여덟
+개 클래스로, 데이터셋과 함께 제공되는 12개 채널의 부분집합)을
+사용한다. \emph{DefectSegAM 기반} 변형은 11-클래스 온톨로지에서
+유지되는 8개 결함 채널(Recoater Hopping, Recoater Streaking, Swelling,
+Debris, Super-Elevation, Spatter, Over Melting, Under Melting;
+Powder, Printed, Incomplete Spreading은 제외,
+\ref{sec:method-inference}절)을 사용한다. 따라서 두 변형 모두 8차원
+슈퍼복셀 피처 벡터를 동일한 물성별 다층 퍼셉트론에 입력하며, 동일한
+시편 단위 5-fold 교차검증 분할을 사용한다.
+
+시편 수에 관하여 언급해 둘 점이 있다. 데이터셋 문서와 원 VPPM 논문은
+6{,}299개의 인장 시편을
+보고한다~\cite{ORNL_CoRegistered_Dataset,VPPM_Baseline}. 그러나
+v2023-11 HDF5 릴리스 자체에서는 6{,}379개의 시편 식별자가 네 가지 인장
+특성 모두에 대한 완전하고 유효한 측정값을 가지며(추가 시편은 빌드
+B1.3에 있고, 공개된 시험 결과 테이블에는 데이터셋 문서에 기재된
+813개와 달리 완전히 측정된 시편 893개가 포함되어 있다), 이 중
+6{,}373개가 피처 추출 후 적어도 하나의 유효 슈퍼복셀을 가진다. 따라서
+본 논문의 모든 다운스트림 결과는 원 VPPM 연구에서 사용된 6{,}299개를
+약간 상회하는 상위집합인 \(N = 6{,}373\)개 시편을 사용한다.

@@ -1,0 +1,227 @@
+% =========================================================================
+% Section 6 — Discussion
+% Fragment for \input from main.tex (no preamble).
+% =========================================================================
+\section{고찰}
+\label{sec:discussion}
+
+% -------------------------------------------------------------------------
+\subsection{라벨 희소성 하에서 frozen 파운데이션 피처가 유효한 이유}
+\label{sec:discussion-frozen}
+
+Powder bed fusion 의 픽셀 단위 결함 세그멘테이션을 규정하는 제약은 모델
+용량이 아니라 주석 공급이다. 본 연구가 사용할 수 있는 전체 전문가
+ground-truth 코퍼스는 여덟 개 장비/소재
+소스~\cite{Peregrine_v2021_03,Peregrine_v2022_10}에 걸친 125개 주석
+레이어로 구성되며, 이 중 98개는 L-PBF, 27개는 binder jet 이다. 수천만 개
+파라미터를 갖는 현대적 세그멘테이션 네트워크를 이러한 코퍼스로
+처음부터(from scratch) 학습하면, 코퍼스에 나타난 소수의 빌드·카메라·조명
+조건에 대한 심각한 과적합을 초래하게 된다. DefectSegAM 은 이 제약을
+정칙화(regularization)만으로가 아니라 구조적으로 해결한다. register
+토큰~\cite{Darcet2024Registers}으로 안정화된 86\,M 파라미터 DINOv2
+인코더~\cite{Oquab2024DINOv2}는 전체가 동결(frozen)된 채 유지되므로,
+전문가 주석은 융합 projection, decoder, head 의 14.6\,M 학습 가능
+파라미터만 형성하면 된다. 인코더의 표현은 자연 이미지에 대한 대규모
+자기지도학습(self-supervision)으로 학습된 것이어서 특정 powder-bed
+카메라에 독립적이며, 학습 문제는 이러한 범용 피처에서 결함 온톨로지로의
+매핑을 학습하는 것으로 환원된다. 이는 소규모 라벨 세트에 잘 부합하는 전이
+학습~\cite{Pan2010TransferLearning}의 한 형태이다. 2-stage 레시피는 이
+효과를 배가한다. 12{,}607개의 의사 라벨(pseudo-label) ORNL 레이어에 대한
+Stage-1 사전학습은 decoder 에 전체 결함 온톨로지에 대한 조밀하고 저렴한
+지도 신호를 제공하므로, 125개의 전문가 주석 레이어는 decoder 를 초기화하는
+데가 아니라 교정하는 데 사용된다. 표본 수 대 파라미터 수의 관점에서
+보면, Stage-1 은 12{,}607개 레이어 $\times$ $1036 \times 1036$ 픽셀, 즉
+약 $1.4 \times 10^{10}$개의 의사 라벨 픽셀을, Stage-2 는 125개 레이어의
+최대 약 $1.3 \times 10^{8}$개의 주석 픽셀(ignore 픽셀 제외 전)을
+14.6\,M 개의 학습 파라미터에 대응시킨다. 다만 인접 픽셀 간의 강한 공간
+상관 때문에 유효 표본 수는 이 픽셀 수보다 훨씬 작으며, 이 점이 인코더를
+동결하고 학습 대상을 decoder 로 한정하는 설계를 뒷받침한다. 태스크별 라벨 없이 promptable 파운데이션
+모델을 AM 결함 세그멘테이션에 활용한 연구~\cite{Era2025SAM}도 같은 방향을
+가리킨다. 본 설계는 학습된 decoder 를 통해 파운데이션 피처를 고정된
+11-class 온톨로지에 특화시킨다는 점에서 다르며, 이로써 다운스트림 정량
+파이프라인으로의 직접 통합이 가능해진다. frozen 피처 논증의 결정적 시험은
+\ref{sec:results-crossmachine}절의 cross-machine 평가이다. 가설이 옳다면,
+모든 학습 소스에 부재한 Veltz 및 EOS 이미징 조건에 직면했을 때
+DefectSegAM 은 전체를 학습한 합성곱 베이스라인보다 더 완만하게 성능이
+저하되어야 한다.
+\TODO{표~\ref{tab:heldout-main}--\ref{tab:ablation}이 채워지면 이 논증을
+정량적으로 재검토할 것.}
+
+% -------------------------------------------------------------------------
+\subsection{의사 라벨 teacher 편향}
+\label{sec:discussion-teacher}
+
+Stage-1 코퍼스는 Peregrine 플랫폼에 배포된 production
+DSCNN~\cite{Scime2020DSCNN}이 라벨링한 것이며,
+\ref{sec:results-agreement}절에서 강조하였듯이 두 단계 모두에서 모델 선택
+역시 검증 빌드의 DSCNN 유래 라벨을 기준으로 점수화된다. 이는 체계적인
+위험을 초래한다. teacher 가 일관되게 저지르는 오류는 ORNL 빌드에서 계산할
+수 있는 모든 일치도(agreement) 지표에 보이지 않으며, 선택 기준이 teacher
+를 교정하는 체크포인트보다 teacher 를 모방하는 체크포인트를 선호할 수
+있다. 세 가지 관찰이 이 위험의 범위를 한정한다. 첫째, Stage-2 미세조정은
+teacher 의 지도 신호를 여덟 개 소스의 사람 주석으로 대체하며, 그중 일곱
+개는 의사 라벨이 생성된 Concept Laser M2/SS~316L 구성이 아닌 다른 장비
+또는 소재에서 온 것이다. 따라서 전문가 라벨이 teacher 와 불일치하는 모든
+곳에서 student 는 teacher 로부터 명시적으로 멀어지도록 이끌린다. 둘째,
+그림~\ref{fig:qualitative-dscnn}의 정성적 비교는 DefectSegAM 이 teacher
+로 수렴하는 것이 아니라, production 모델이 놓치는 Recoater Streaking 및
+Spatter 영역을 포착하는 등 일관된 방향으로 teacher 로부터 벗어남을
+보여준다. 셋째, 그리고 가장 중요하게,
+\ref{sec:results-downstream}절의 다운스트림 사례 연구는 teacher 와
+독립적이다. 6{,}373개 시편의 인장 물성은 어느 세그멘테이션 모델과도
+무관하며, 이 외부 기준에서 student 의 맵은 teacher 의 맵보다 실질적으로 더
+많은 물성 관련 정보를 담고 있다(동일한 파이프라인에서 UTS RMSE 37.5 대
+70.7\,MPa). 따라서 teacher 로부터의 이탈은 적어도 총량 수준에서는 노이즈가
+아니라 개선이다. 그럼에도 일치도 통계는 픽셀 수준 정확도를 결코 보증할 수
+없으며, 이것이 재구현되어 동일하게 학습된 DSCNN 을 상대로 한
+\ref{sec:results-heldout}절의 held-out 사람 GT 평가가 본 논문의
+세그멘테이션 주장에 대한 결정적 실험으로 남는 이유이다.
+
+% -------------------------------------------------------------------------
+\subsection{Ground truth 희소성과 클래스 불균형}
+\label{sec:discussion-imbalance}
+
+\ref{sec:setup}절의 클래스 통계는 학습과 평가 양쪽에 엄격한 한계를
+부과한다. 극단적인 경우 Recoater Hopping 은 다섯 개 ORNL 빌드 전체에 걸쳐
+25개의 참조 픽셀만을 제공하며, 여러 클래스가 거의 전적으로 단일 빌드에
+집중되어 있다(B1.2 에 Over Melting 의 99.8\,\% 와 Under Melting 의
+99.9\,\%; B1.5 에 Super-Elevation 의 98\,\%; B1.3 에 Debris 의 90\,\%).
+학습 측 완화책---역빈도 class-aware 샘플링, 희소 클래스 성분의 Copy-Paste
+증강~\cite{Ghiasi2021CopyPaste}, 그리고 제곱근 역빈도 클래스 가중치를
+적용한 focal loss~\cite{Lin2017FocalLoss}---은 최적화 과정에서의 노출
+문제를 다루지만, 어떠한 샘플링 기법도 존재하지 않는 평가 support 를
+만들어낼 수는 없다. 고정 검증 빌드 B1.1 은 11개 클래스 중 4개에 대해 참조
+픽셀이 사실상 전무하므로, 해당 빌드의 모든 내부 지표는 이들 클래스에 대해
+아무것도 말해 주지 못한다. 이것이
+표~\ref{tab:results-agreement-perclass}의 다중 빌드 분석이 용융 에너지
+클래스에 유의미한 support 를 갖는 유일한 빌드인 B1.2 에 의존하는 이유이며,
+정상 조건 빌드에서의 단일 숫자 mIoU 값이 모델이 학습한 바를 체계적으로
+과소평가하는 이유이다.
+
+구속 조건이 최적화가 아니라 전문가 라벨 희소성이라는 증거는 본 모델의 이전
+세대에서 나온다. 여덟 개 전문가 주석 소스에 대한 v2 세대 모델(ViT-S/14
+백본, 8-class head---본 논문에서 제안하는 모델이 아님)의
+leave-one-source-out 교차검증은 fold 평균 mIoU 0.253(평균 픽셀 정확도
+0.894)을 산출하였으며, fold 별 mIoU 는 0.139 에서 0.346 에 걸쳐 있었고
+가장 희소한 클래스들의 fold 평균 IoU 는 0 에 가까웠다(Over Melting
+$\approx 0$, Debris $\approx 0.003$, Spatter 0.056). 이 수치들은 본 연구가
+공략하도록 설계된 도메인 갭과 라벨 희소성을 보여주는 동기 부여 증거로서만
+인용한다---이 결과들은 ViT-B 백본, 11-class 온톨로지, class-aware 샘플러,
+Copy-Paste 증강 이전의 것이다---그리고 fold 별 mIoU 평균이 해당 fold 의
+검증 소스에 부재한 클래스를 제외하므로 fold 간 분모가 달라 절대 수준을
+과잉 해석해서는 안 된다는 방법론적 유의점을 함께 밝혀 둔다.
+\ref{sec:results-ablation}절의 ablation 은 DefectSegAM 설계가 이 결손을
+얼마나 회복하는지 정량화할 예정이다.
+\TODO{표~\ref{tab:ablation}이 채워지면 이 동기 부여 베이스라인과
+명시적으로 비교할 것.}
+
+% -------------------------------------------------------------------------
+\subsection{Binder-jet/L-PBF 도메인 갭}
+\label{sec:discussion-domaingap}
+
+같은 v2 세대 교차검증은 도메인 갭의 위치를 특정한다. 여섯 개 L-PBF fold
+의 평균 mIoU 는 0.288(픽셀 정확도 0.904)이었던 반면, 두 개 binder-jet
+fold 의 평균은 0.145(픽셀 정확도 0.867)였으며, binder-jet 소스의 Printed
+클래스 IoU 는 0.02--0.07 로 붕괴하였다. binder-jet 소스는 비전 모델에
+중요한 거의 모든 측면에서 L-PBF 소스와 다르다---센서(20\,MP 가시광 카메라,
+그중 하나는 적색 조명, 대 1--5\,MP 가시광 시스템), 표면 외관(바인더로
+응고된 분말 대 용융된 금속), 결함 물리(roller streaking, short feed,
+cornrows 대 용융 기인 이상)---따라서 이 붕괴는 dataset
+shift~\cite{Quinonero2009DatasetShift,Torralba2011DatasetBias}의 교과서적
+사례이다. 미세조정에 사용할 수 있는 전문가 주석 binder-jet 레이어가
+27개뿐이므로 두 공정 기술 간의 동등한 성능을 기대하지는 않는다.
+표~\ref{tab:heldout-main}의 공정 기술별 열은 이 갭을 평균 내어 감추는 대신
+정직하게 보고하도록 설계되어 있다. L-PBF 내부에서는, 계획된 Veltz
+M160/M280 및 EOS 평가가 같은 질문의 더 완화되었지만 실용적으로 핵심적인
+버전---하나의 공정 계열 내에서 장비와 카메라를 가로지르는 전이---을
+검증하며, frozen 백본 설계는 바로 이를 견뎌 내도록 특별히 의도된 것이다.
+
+% -------------------------------------------------------------------------
+\subsection{결함 분류 체계의 함의}
+\label{sec:discussion-taxonomy}
+
+\ref{sec:method-taxonomy}절의 외형 기준 체계는 본 논문의 실험에 쓰이지
+않았지만, 11-class 온톨로지로 얻은 결과 중 일부는 그 설계와 모순되지
+않는다. 첫째, 표~\ref{tab:results-agreement-perclass}에서 B1.2 의
+Super-Elevation 일치도 IoU 는 0.0043 에 그친다. 같은 150개 레이어의
+confusion matrix 를 보면 참조 Super-Elevation 픽셀 1{,}396개 중
+86.7\,\%(1{,}210개)가 Swelling 으로 예측되었다. 반대로 참조 Swelling 픽셀
+852{,}040개 중 Super-Elevation 으로 예측된 것은 34개로 사실상 없다. 두
+클래스의 ORNL 정의는 각각 변형된 프린팅 재료와 프린팅 영역 위의 분말 피복
+부족이지만, 저자들의 관찰로는 Powder 이미지에서 모두 파트가 분말 위로
+드러난 유사한 형상으로 나타나 구별하기 어렵다. 이 혼동 관찰은 support 가
+극히 작은 B1.2 에서의 것이고 teacher 자신의 일관성에 대해서는 말해 주지
+않지만, 두 클래스를 통합 클래스 Super Elevation 으로 합치는 제안과
+부합한다. 다만 이 혼동은 클래스 불균형만으로도 설명된다. 같은 150개
+레이어에서 모델이 Super-Elevation 으로 예측한 픽셀은 총 707개로, student
+가 이 클래스를 거의 출력하지 않는 희소 클래스 붕괴에 해당하므로, 이 혼동
+관찰은 두 클래스의 외형이 유사하다는 근거가 아니라 통합 제안과 양립한다는
+정도로만 해석해야 한다. 두 클래스를 합친 일치도 IoU 는 0.6043
+으로 Swelling 단독(0.6038)과 거의 같으므로, 통합의 효과는 일치도 수치가
+아니라 참조 라벨의 일관성과 희소 클래스 하나의 제거에 있다. 또한
+Super-Elevation 픽셀의 98\,\% 가 집중된 B1.5 는 샘플링된 150개 레이어에서
+support 가 0 이므로, 이 클래스가 실제로 발생하는 빌드에서의 분리 가능
+여부는 이 분석으로 알 수 없다. 통합이 실제로 라벨 노이즈를 줄이는지는
+재주석 후 주석자 간 일치도로 확인해야 한다.
+둘째, \ref{sec:method-inference}절의 후처리 규칙 2(Printed 마스크 위의
+Spatter 를 Over Melting 으로 재라벨링)는 제안 체계보다 먼저 도입된
+휴리스틱이지만 제안 체계의 영역 기준 판별과 같은 취지이며, 학습 라벨이 그
+기준으로 주석된다면 같은 구분을 모델이 직접 학습하게 된다. 셋째, 본 논문의
+핵심 결과 중 하나인 B1.2 의 Under Melting 일치도(IoU 0.8643)는 저에너지
+밀도라는 공정 파라미터로 정의된 클래스에 대한 것이어서, 외형 기준 원칙
+아래에서는 이 클래스의 처리가 아직 확정되지 않았다. 이 일치도는 teacher 와
+student 가 같은 패턴을 표시함을 뜻할 뿐이고 해당 픽셀의 99.9\,\% 가 B1.2
+한 빌드에 집중되어 있으므로, 주석자가 적용할 수 있는 외형 판정 기준의
+존재를 보증하지 않는다. 제안 체계로 전환하면 이 결과는 재정의된 클래스에
+대해 다시 평가되거나, 제외될 경우 더 이상 보고되지
+않는다(\ref{sec:results}절에서 비교한 이전 세대 모델 v3 의 10-class 공간은
+Under Melting 을 뺀 것으로, 제안 체계의 10개 클래스와는 무관하다). Over
+Melting 에도 같은 주의가 필요하다. 제안 체계의 Over Melting 은 파트 영역
+위의 거뭇한 영역이라는 외형으로 재정의되므로,
+\ref{sec:results-agreement}절에서 keyhole 전조로 해석한 11-class Over
+Melting(B1.2 일치도 IoU 0.4715)과 같은 대상이 아니다. 따라서 DefectSegAM
+기반 다운스트림 변형(\ref{sec:setup-downstream}절)이 사용하는 Over
+Melting 과 Under Melting 채널도 클래스 재정의와 재학습 뒤에 다시 평가해야
+한다. 넷째, 제안 체계는 데이터 가용성의 제약을 그대로 물려받는다.
+Powder Collapse 에는 어떤 코퍼스에도 라벨이 없고, Recoater Hopping 은 ORNL
+코퍼스에 25픽셀뿐이며, Spatter 와 Over Melting 의 사람 주석을 늘릴 수 있는
+native ``Soot'' 의 분할은 파트 마스크가 비어 있지 않은 소수 레이어(maraging
+steel 9개 레이어, 전체 Soot 주석의 약 9\,\%)에만 적용 가능하고 마스크 경계
+오차를 감수해야 한다. 따라서 제안 체계의 검증은 재주석과 재학습을
+전제로 한다.
+\TODO{제안 체계로 재주석한 뒤 재학습하고
+표~\ref{tab:results-agreement-perclass}를 재산출할 것.}
+
+% -------------------------------------------------------------------------
+\subsection{타당성에 대한 위협}
+\label{sec:discussion-validity}
+
+본 결과를 제한하는 한계들을 요약한다. (i)~현재 ORNL 빌드에서 가용한 모든
+정량적 세그멘테이션 수치는 production DSCNN 과의 일치도(agreement)
+통계이지 정확도가 아니다. 이 통계는 teacher 와 student 가 공유하는 오류를
+탐지할 수 없으며, 본 논문의 정확도 주장은 \ref{sec:results-heldout}절과
+\ref{sec:results-crossmachine}절의 미수행 held-out 평가에 달려 있다.
+(ii)~다운스트림 사례 연구는 시편 단위 교차검증을 사용하므로 모든 fold 가
+모든 빌드의 시편을 포함한다. 더 엄격한 leave-one-build-out 프로토콜에서는
+절대 RMSE 값이 달라질 수 있으나, 모든 변형이 동일한 분할을 공유하므로
+세그멘테이션 소스 간 붕괴-복원 대비는 분할 설계의 영향을 받지 않는다.
+(iii)~다운스트림 증거는 단일 소재와 장비(Concept Laser M2 의
+SS~316L~\cite{ORNL_CoRegistered_Dataset}) 및 하나의 물성군만을 다루며, 그
+일반화는 검증되지 않았다. (iv)~통합 온톨로지는 각 소스의 native 클래스를
+11-class 공간으로 매핑하며, 대응 클래스가 없는 클래스는 ignore 픽셀로서
+loss 에서 제외된다(native Misprint 포함). 따라서 소스 간의 체계적인 라벨링
+관례 차이는 명시적으로 모델링하지 않는 라벨 노이즈로 남는다. 이 노이즈의
+일부는 온톨로지 자체가 원인 기준과 외형 기준을 섞어 쓰는 데서 비롯하며,
+\ref{sec:method-taxonomy}절의 외형 기준 체계는 이를 줄이도록 설계되었으나 본
+논문의 어떤 결과에도 아직 적용되지 않았다(\ref{sec:discussion-taxonomy}절).
+(v)~DSCNN
+재구현의 충실성은 원 논문~\cite{Scime2020DSCNN}에서 옮겨 적은
+하이퍼파라미터에 의존한다. 문서화가 불충분한 세부 사항은 베이스라인 비교의
+교란 요인이 되며, 이는 재구현의 구성을 전부 보고함으로써 완화할 예정이다.
+(vi)~보고된 모든 일치도 수치와 그림은 단일 forward pass 를 사용한
+것이다. test-time augmentation(TTA)과 두 가지 추론 시 후처리 규칙은 본
+논문의 어떤 결과에도 적용되지 않았으므로 그 정량적 효과는 아직 측정되지
+않았다. (vii)~Stage-1 학습은
+random seed 를 고정하지 않으므로 전체 파이프라인의 실행 간(run-to-run)
+분산은 정량화되지 않았다. Stage-2 는 고정 seed 를 사용한다. \TODO{held-out
+평가와 함께 seed 민감도 및 TTA·후처리의 정량적 효과를 정량화할 것.}

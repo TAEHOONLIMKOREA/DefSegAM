@@ -1,0 +1,684 @@
+% ===========================================================================
+% refs.bib — DefectSegAM manuscript (Elsevier, elsarticle-num)
+% Contains exactly the 58 keys cited in sections/*.tex + main.tex.
+% Entries with upper-case field names were carried over from Paper/DeepVPPM/refs.bib.
+% Journal names use LTWA abbreviations (Elsevier reference style); article numbers
+% are stored in PAGES because elsarticle-num.bst does not read ARTICLE-NUMBER.
+% ===========================================================================
+
+% ===========================================================================
+% Industry / market reports (Chapter 1)
+% ===========================================================================
+
+% NOTE = {Annual industry report. The 2024 edition reports global AM industry revenue of \$20.035 billion in 2023 (+11.1\,\% YoY, first time exceeding the \$20 billion threshold) and a 24.4\,\% growth in metal AM system shipments (3{,}793 systems sold in 2023 vs.\ 3{,}049 in 2022).}
+@TechReport{Wohlers2024,
+AUTHOR = {{Wohlers Associates}},
+TITLE = {{Wohlers Report 2024}: {3D} Printing and Additive Manufacturing Global State of the Industry},
+INSTITUTION = {ASTM International},
+YEAR = {2024},
+ADDRESS = {Fort Collins, CO, USA},
+URL = {https://wohlersassociates.com/news/wohlers-report-2024-shows-metal-am-growth-in-new-report/},
+}
+
+% NOTE = {Industrial AM market (metal and polymer equipment, materials, and part manufacturing services) valued at EUR 10.50 billion in 2023, with a projected compound annual growth rate (CAGR) of 13.9\,\% until 2028. Metal AM is reported to grow at approximately twice the rate of polymer AM.}
+@TechReport{AMPOWER2024,
+AUTHOR = {{AMPOWER GmbH \& Co.\ KG}},
+TITLE = {{AMPOWER Report 2024}: Additive Manufacturing Market Report},
+INSTITUTION = {AMPOWER GmbH \& Co.\ KG},
+YEAR = {2024},
+ADDRESS = {Hamburg, Germany},
+URL = {https://additive-manufacturing-report.com/additive-manufacturing-market-2024/},
+}
+
+% ===========================================================================
+% Additive manufacturing / L-PBF process, defects, and qualification (Chapter 1)
+% ===========================================================================
+
+@Misc{ISO52900,
+  author       = {{ISO/ASTM}},
+  title        = {{ISO/ASTM} 52900:2021, Additive manufacturing --- General principles --- Fundamentals and vocabulary},
+  howpublished = {Standard, Geneva, Switzerland},
+  year         = {2021}
+}
+
+% ASTM E3353-22: verified against Crossref (doi 10.1520/E3353-22, type
+% "standard", publisher ASTM International; accessed 2026-09-28). Cited in
+% Sections 1-3 for the recoating / part-forming anomaly vocabulary.
+@Misc{ASTME3353,
+  author       = {{ASTM International}},
+  title        = {{ASTM} {E3353-22}, Standard Guide for In-Process Monitoring Using Optical and Thermal Methods for Laser Powder Bed Fusion},
+  howpublished = {Standard, West Conshohocken, PA, USA},
+  year         = {2022},
+  doi          = {10.1520/E3353-22}
+}
+
+@Book{Gibson2021AMTech,
+  author    = {Gibson, Ian and Rosen, David and Stucker, Brent and Khorasani, Mahyar},
+  title     = {Additive Manufacturing Technologies},
+  edition   = {3rd},
+  publisher = {Springer},
+  address   = {Cham, Switzerland},
+  year      = {2021},
+  doi       = {10.1007/978-3-030-56127-7}
+}
+
+@Article{King2015LPBF,
+  author  = {King, W. E. and Anderson, A. T. and Ferencz, R. M. and Hodge, N. E. and Kamath, C. and Khairallah, S. A. and Rubenchik, A. M.},
+  title   = {Laser powder bed fusion additive manufacturing of metals; physics, computational, and materials challenges},
+  journal = {Appl. Phys. Rev.},
+  volume  = {2},
+  number  = {4},
+  pages   = {041304},
+  year    = {2015},
+  doi     = {10.1063/1.4937809}
+}
+
+@Article{King2014Keyhole,
+  author  = {King, W. E. and Barth, H. D. and Castillo, V. M. and Gallegos, G. F. and Gibbs, J. W. and Hahn, D. E. and Kamath, C. and Rubenchik, A. M.},
+  title   = {Observation of keyhole-mode laser melting in laser powder-bed fusion additive manufacturing},
+  journal = {J. Mater. Process. Technol.},
+  volume  = {214},
+  number  = {12},
+  pages   = {2915--2925},
+  year    = {2014},
+  doi     = {10.1016/j.jmatprotec.2014.06.005}
+}
+
+@Article{Sames2016Metallurgy,
+  author  = {Sames, W. J. and List, F. A. and Pannala, S. and Dehoff, R. R. and Babu, S. S.},
+  title   = {The metallurgy and processing science of metal additive manufacturing},
+  journal = {Int. Mater. Rev.},
+  volume  = {61},
+  number  = {5},
+  pages   = {315--360},
+  year    = {2016},
+  doi     = {10.1080/09506608.2015.1116649}
+}
+
+@Article{Ly2017Spatter,
+  author  = {Ly, Sonny and Rubenchik, Alexander M. and Khairallah, Saad A. and Guss, Gabe and Matthews, Manyalibo J.},
+  title   = {Metal vapor micro-jet controls material redistribution in laser powder bed fusion additive manufacturing},
+  journal = {Sci. Rep.},
+  volume  = {7},
+  pages   = {4085},
+  year    = {2017},
+  doi     = {10.1038/s41598-017-04237-z}
+}
+
+@Article{Tang2017LOF,
+  author  = {Tang, Ming and Pistorius, P. Chris and Beuth, Jack L.},
+  title   = {Prediction of lack-of-fusion porosity for powder bed fusion},
+  journal = {Addit. Manuf.},
+  volume  = {14},
+  pages   = {39--48},
+  year    = {2017},
+  doi     = {10.1016/j.addma.2016.12.001}
+}
+
+@Article{Seifi2016Qualification,
+  author  = {Seifi, Mohsen and Salem, Ayman and Beuth, Jack and Harrysson, Ola and Lewandowski, John J.},
+  title   = {Overview of Materials Qualification Needs for Metal Additive Manufacturing},
+  journal = {JOM},
+  volume  = {68},
+  number  = {3},
+  pages   = {747--764},
+  year    = {2016},
+  doi     = {10.1007/s11837-015-1810-0}
+}
+
+@Article{Seifi2017Standardization,
+  author  = {Seifi, Mohsen and Gorelik, Michael and Waller, Jess and Hrabe, Nikolas and Shamsaei, Nima and Daniewicz, Steve and Lewandowski, John J.},
+  title   = {Progress Towards Metal Additive Manufacturing Standardization to Support Qualification and Certification},
+  journal = {JOM},
+  volume  = {69},
+  number  = {3},
+  pages   = {439--455},
+  year    = {2017},
+  doi     = {10.1007/s11837-017-2265-2}
+}
+
+@Article{duPlessis2018XCT,
+  author  = {du Plessis, Anton and Yadroitsev, Igor and Yadroitsava, Ina and Le Roux, Stephan G.},
+  title   = {X-Ray Microcomputed Tomography in Additive Manufacturing: A Review of the Current Technology and Applications},
+  journal = {3D Print. Addit. Manuf.},
+  volume  = {5},
+  number  = {3},
+  pages   = {227--247},
+  year    = {2018},
+  doi     = {10.1089/3dp.2018.0060}
+}
+
+@Article{BlakeyMilner2021Aerospace,
+  author  = {Blakey-Milner, Byron and Gradl, Paul and Snedden, Glen and Brooks, Michael and Pitot, Jean and Lopez, Elena and Leary, Martin and Berto, Filippo and du Plessis, Anton},
+  title   = {Metal additive manufacturing in aerospace: A review},
+  journal = {Mater. Des.},
+  volume  = {209},
+  pages   = {110008},
+  year    = {2021},
+  doi     = {10.1016/j.matdes.2021.110008}
+}
+
+@Article{Bose2018Biomaterials,
+  author  = {Bose, Susmita and Ke, Dongxu and Sahasrabudhe, Himanshu and Bandyopadhyay, Amit},
+  title   = {Additive manufacturing of biomaterials},
+  journal = {Prog. Mater. Sci.},
+  volume  = {93},
+  pages   = {45--111},
+  year    = {2018},
+  doi     = {10.1016/j.pmatsci.2017.08.003}
+}
+
+% ===========================================================================
+% Reviews (process--structure--properties, ML for L-PBF)
+% ===========================================================================
+
+% Grasso & Colosimo 2017: verified against Crossref (doi 10.1088/1361-6501/aa5c4f;
+% accessed 2026-09-28). Cited in Section 2 as the representative cause-oriented
+% defect taxonomy for metal PBF.
+@Article{Grasso2017Review,
+  author  = {Grasso, Marco and Colosimo, Bianca Maria},
+  title   = {Process defects and in situ monitoring methods in metal powder bed fusion: a review},
+  journal = {Meas. Sci. Technol.},
+  volume  = {28},
+  number  = {4},
+  pages   = {044005},
+  year    = {2017},
+  doi     = {10.1088/1361-6501/aa5c4f}
+}
+
+% NOTE = {Foundational review of metal AM linking process, microstructure, defects, and mechanical properties; one of the most heavily cited references underlying subsequent ML-based AM prediction work (ScienceDirect ``Cited by'' on the order of several thousand).}
+@Article{DebRoy2018PMS,
+AUTHOR = {DebRoy, T. and Wei, H. L. and Zuback, J. S. and Mukherjee, T. and Elmer, J. W. and Milewski, J. O. and Beese, A. M. and Wilson-Heid, A. and De, A. and Zhang, W.},
+TITLE = {Additive manufacturing of metallic components -- Process, structure and properties},
+JOURNAL = {Prog. Mater. Sci.},
+VOLUME = {92},
+YEAR = {2018},
+PAGES = {112--224},
+ISSN = {0079-6425},
+DOI = {10.1016/j.pmatsci.2017.10.001},
+URL = {https://www.sciencedirect.com/science/article/pii/S0079642517301172},
+}
+
+% NOTE = {High-impact review integrating metallurgy, mechanistic process models, and machine learning across the metal-AM lifecycle (design, process planning, monitoring, inspection, qualification).}
+@Article{DebRoy2021NatRevMater,
+AUTHOR = {DebRoy, T. and Mukherjee, T. and Wei, H. L. and Elmer, J. W. and Milewski, J. O.},
+TITLE = {Metallurgy, mechanistic models and machine learning in metal printing},
+JOURNAL = {Nat. Rev. Mater.},
+VOLUME = {6},
+YEAR = {2021},
+PAGES = {48--68},
+DOI = {10.1038/s41578-020-00236-1},
+URL = {https://www.nature.com/articles/s41578-020-00236-1},
+}
+
+% NOTE = {Review focused on ML for in-situ monitoring and control of L-PBF; reports a sharp post-2018 increase in ML-for-L-PBF publications and identifies multi-sensor monitoring and ML-based defect prediction as the dominant research subareas.}
+@Article{Mahmoud2021LPBFreview,
+AUTHOR = {Mahmoud, Dalia and Magolon, Marcin and Boer, Jan and Elbestawi, Mohamed A. and Mohammadi, Mohammad Ghayoomi},
+TITLE = {Applications of Machine Learning in Process Monitoring and Controls of {L-PBF} Additive Manufacturing: A Review},
+JOURNAL = {Appl. Sci.},
+VOLUME = {11},
+NUMBER = {24},
+PAGES = {11910},
+YEAR = {2021},
+DOI = {10.3390/app112411910},
+URL = {https://www.mdpi.com/2076-3417/11/24/11910},
+}
+
+% ===========================================================================
+% Baseline VPPM, DSCNN, and Peregrine datasets
+% ===========================================================================
+
+@Article{VPPM_Baseline,
+AUTHOR = {Scime, Luke and Joslin, Chase and Collins, David A. and Sprayberry, Michael and Singh, Alka and Halsey, William and Duncan, Ryan and Snow, Zackary and Dehoff, Ryan and Paquit, Vincent},
+TITLE = {A Data-Driven Framework for Direct Local Tensile Property Prediction of Laser Powder Bed Fusion Parts},
+JOURNAL = {Materials},
+VOLUME = {16},
+YEAR = {2023},
+NUMBER = {23},
+PAGES = {7293},
+URL = {https://www.mdpi.com/1996-1944/16/23/7293},
+PubMedID = {38068036},
+ISSN = {1996-1944},
+ABSTRACT = {This article proposes a generalizable, data-driven framework for qualifying laser powder bed fusion additively manufactured parts using part-specific in situ data, including powder bed imaging, machine health sensors, and laser scan paths. To achieve part qualification without relying solely on statistical processes or feedstock control, a sequence of machine learning models was trained on 6299 tensile specimens to locally predict the tensile properties of stainless-steel parts based on fused multi-modal in situ sensor data and a priori information. A cyberphysical infrastructure enabled the robust spatial tracking of individual specimens, and computer vision techniques registered the ground truth tensile measurements to the in situ data. The co-registered 230 GB dataset used in this work has been publicly released and is available as a set of HDF5 files. The extensive training data requirements and wide range of size scales were addressed by combining deep learning, machine learning, and feature engineering algorithms in a relay. The trained models demonstrated a 61% error reduction in ultimate tensile strength predictions relative to estimates made without any in situ information. Lessons learned and potential improvements to the sensors and mechanical testing procedure are discussed.},
+DOI = {10.3390/ma16237293}
+}
+
+% NOTE = {Publicly released co-registered in-situ and ex-situ HDF5 dataset of SS~316L L-PBF tensile specimens collected at the ORNL Manufacturing Demonstration Facility, underlying the framework of Scime et al. (2023). This work trains and cross-validates on the five baseline builds (B1.1--B1.5, ${\sim}230$~GB, Peregrine v2023-11) and evaluates cross-dataset generalization on the AMMTO Spatial Variation Baseline build (Peregrine v2023-10 re-extraction).}
+% Title, author list, DOI and year verified against the OLCF Constellation landing page
+% (doi.ccs.ornl.gov/ui/doi/452 -> /dataset/c0247625-951c-5616-a2e3-03803e848896, accessed 2026-09-17).
+@Misc{ORNL_CoRegistered_Dataset,
+  author       = {Scime, Luke and Joslin, Chase and Collins, David and Halsey, William and Duncan, Ryan and Paquit, Vincent},
+  title        = {A Co-Registered In-Situ and Ex-Situ Tensile Properties Dataset from a Laser Powder Bed Fusion Additive Manufacturing Process ({Peregrine} v2023-11)},
+  year         = {2023},
+  doi          = {10.13139/ORNLNCCS/2001425},
+  howpublished = {Oak Ridge National Laboratory, Oak Ridge Leadership Computing Facility (OLCF) Constellation data repository},
+  url          = {https://doi.ccs.ornl.gov/ui/doi/452}
+}
+
+% NOTE = {Original DSCNN (Dynamic Segmentation CNN) paper. Pixel-wise semantic segmentation of layer-wise powder bed images into 12 anomaly classes; production deployment inside the ORNL Peregrine system supplies the \texttt{slices/segmentation\_results/} masks used as the G1 input group of the baseline VPPM.}
+@Article{Scime2020DSCNN,
+AUTHOR = {Scime, Luke and Siddel, Derek and Baird, Seth and Paquit, Vincent},
+TITLE = {Layer-wise anomaly detection and classification for powder bed additive manufacturing processes: A machine-agnostic algorithm for real-time pixel-wise semantic segmentation},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {36},
+YEAR = {2020},
+PAGES = {101453},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2020.101453},
+URL = {https://www.sciencedirect.com/science/article/pii/S2214860420308253},
+}
+
+% NOTE = {Layer-wise powder bed images from three printing technologies (L-PBF, EB-PBF, binder jet), 20 annotated layers per technology with expert pixel-wise ground truth; L-PBF portion from a ConceptLaser M2 with 5~MP visible-light camera, SS~316L, 9 label classes (0--8); collected at ORNL 2016--2020, compiled March 2021.}
+% Author full names and DOI verified against the OSTI record (osti.gov/biblio/1779073, accessed 2026-09-15).
+% Year: the dataset's own citation guidance (v2023-10 readme, ref [2]) and the version tag say 2021; the OSTI landing page displays publication year 2023 — TODO: confirm the year the journal/production editor prefers before final submission.
+@Misc{Peregrine_v2021_03,
+  author       = {Scime, Luke and Paquit, Vincent and Joslin, Chase and Richardson, Dylan and Goldsby, Desarae and Lowe, Larry},
+  title        = {Layer-wise Imaging Dataset from Powder Bed Additive Manufacturing Processes for Machine Learning Applications ({Peregrine} v2021-03)},
+  year         = {2021},
+  doi          = {10.13139/ORNLNCCS/1779073},
+  howpublished = {Oak Ridge National Laboratory, Oak Ridge Leadership Computing Facility (OLCF) data repository},
+  note         = {OSTI 1779073}
+}
+
+% NOTE = {Six datasets from the ORNL MDF: L-PBF (EOS M290, AddUp FormUp 350) and binder jet (ExOne M-Flex); materials 17-4~PH SS, GammaPrint-700, Inconel 718, Maraging Steel, H13 Steel; modalities visible-light, TI-NIR, wide-band IR; training/evaluation images per subset 7/1228, 26/1322, 14/1040, 9/2267, 5/151, 24/822.}
+% Author full names and DOI verified against the OSTI record (osti.gov/biblio/1896716, accessed 2026-09-15).
+% Caveat: the local repo copy is labeled "Peregrine Dataset v2022-10.1"; whether OSTI 1896716 covers the .1 revision is not stated in any repo file — TODO: confirm before final submission.
+@Misc{Peregrine_v2022_10,
+  author       = {Scime, Luke and Joslin, Chase and Duncan, Ryan and Brinkley, Frank and Ledford, Christopher and Siddel, Derek and Paquit, Vincent},
+  title        = {Layer-wise Imaging Dataset from Powder Bed Additive Manufacturing Processes for Machine Learning Applications ({Peregrine} v2022-10)},
+  year         = {2022},
+  doi          = {10.13139/ORNLNCCS/1896716},
+  howpublished = {Oak Ridge National Laboratory, OLCF data repository},
+  note         = {OSTI 1896716}
+}
+
+% NOTE = {2025 Peregrine release: in-situ monitoring data collected with Peregrine from a Concept Laser M2 (Colibrium Additive) L-PBF printer and an ExOne Innovent (Desktop Metal) binder jet printer; four builds released as HDF5 files plus author-annotated process anomalies across 37 image stacks (print layers).}
+% Metadata verified against the OSTI record (osti.gov/biblio/2588140, accessed 2026-09-15); no metadata for this release exists in repo files.
+% The bib key retains the historical "_TODO" suffix because the manuscript already cites it under this name.
+@Misc{Peregrine_v2025_TODO,
+  author       = {Scime, Luke and Snow, Zackary and Joslin, Chase and McDonald, Trevor and Goldsby, Desarae and Richardson, Dylan and Paquit, Vincent},
+  title        = {2025 {Peregrine} in-situ monitoring and training dataset for laser powder bed fusion and binder jet printers},
+  year         = {2025},
+  doi          = {10.13139/ORNLNCCS/2588140},
+  howpublished = {Oak Ridge National Laboratory, OLCF data repository},
+  note         = {OSTI 2588140}
+}
+
+% ===========================================================================
+% In-situ defect detection (Chapter 2, defect-detection branch)
+% ===========================================================================
+
+% zur Jacobsmuehlen et al. 2013: verified against Crossref (doi
+% 10.1109/I2MTC.2013.6555507; accessed 2026-09-28). Cited in Section 2 as an
+% early image-based catalogue of layer-wise process errors in laser beam melting.
+@inproceedings{zurJacobsmuhlen2013HighRes,
+  author    = {zur Jacobsm{\"u}hlen, Joschka and Kleszczynski, Stefan and Schneider, Dorian and Witt, Gerd},
+  title     = {High resolution imaging for inspection of laser beam melting systems},
+  booktitle = {2013 IEEE International Instrumentation and Measurement Technology Conference ({I2MTC})},
+  publisher = {IEEE},
+  address   = {Minneapolis, MN, USA},
+  year      = {2013},
+  pages     = {707--712},
+  doi       = {10.1109/I2MTC.2013.6555507}
+}
+
+% NOTE = {Trained computer vision algorithm classifying six anomaly types (e.g., recoater hopping, recoater streaking, super-elevation) on layer-wise powder bed images from an L-PBF process; an early reference for layer-wise in situ anomaly detection.}
+@Article{Scime2018Anomaly,
+AUTHOR = {Scime, Luke and Beuth, Jack},
+TITLE = {Anomaly detection and classification in a laser powder bed additive manufacturing process using a trained computer vision algorithm},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {19},
+YEAR = {2018},
+PAGES = {114--126},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2017.11.009},
+URL = {https://www.sciencedirect.com/science/article/abs/pii/S221486041730180X},
+}
+
+% NOTE = {High-speed visible-light imaging of melt-pool morphology in Inconel 718 L-PBF; supervised classification of melt-pool signatures linked to keyholing and balling defect formation.}
+@Article{Scime2019MeltPool,
+AUTHOR = {Scime, Luke and Beuth, Jack},
+TITLE = {Using machine learning to identify in-situ melt pool signatures indicative of flaw formation in a laser powder bed fusion additive manufacturing process},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {25},
+YEAR = {2019},
+PAGES = {151--165},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2018.11.010},
+URL = {https://www.sciencedirect.com/science/article/abs/pii/S2214860418306869},
+}
+
+% NOTE = {In situ layer-wise high-resolution DSLR imaging combined with SVM classifiers for defect detection in metallic L-PBF; reports approximately 85\% accuracy after multimodal integration and motivates in-process re-melting feedback.}
+@Article{Gobert2018InProcess,
+AUTHOR = {Gobert, Christian and Reutzel, Edward W. and Petrich, Jan and Nassar, Abdalla R. and Phoha, Shashi},
+TITLE = {Application of supervised machine learning for defect detection during metallic powder bed fusion additive manufacturing using high resolution imaging},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {21},
+YEAR = {2018},
+PAGES = {517--528},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2018.04.005},
+URL = {https://www.sciencedirect.com/science/article/abs/pii/S2214860417302051},
+}
+
+% NOTE = {CNNs trained on multi-illumination layerwise images with X-ray CT ground truth; reports 93.5\% accuracy on >200\,$\mu$m flaws within a build and 87.3\% accuracy on a previously unseen build, demonstrating cross-build generalization of in situ image-based flaw detection.}
+% Journal, volume, pages and DOI corrected against Crossref on 2026-09-17: the paper is in
+% Journal of Manufacturing Systems 59 (2021) 12--26 (10.1016/j.jmsy.2021.01.008); the earlier
+% DOI 10.1016/j.jmapro.2021.02.022 resolves to an unrelated J. Manuf. Process. article.
+@Article{Snow2021Layerwise,
+AUTHOR = {Snow, Zackary and Diehl, Brett and Reutzel, Edward W. and Nassar, Abdalla},
+TITLE = {Toward in-situ flaw detection in laser powder bed fusion additive manufacturing through layerwise imagery and machine learning},
+JOURNAL = {J. Manuf. Syst.},
+VOLUME = {59},
+YEAR = {2021},
+PAGES = {12--26},
+ISSN = {0278-6125},
+DOI = {10.1016/j.jmsy.2021.01.008},
+}
+
+% NOTE = {LPBF photodiode signals tied to UTS labels on 49 tensile bars; semi-supervised classifier achieves $\sim$77\,\% success rate using only a fraction of the labels; foundational reference for label-efficient in-situ fault detection.}
+@Article{Okaro2019SemiSup,
+AUTHOR = {Okaro, Ikenna A. and Jayasinghe, Sarini and Sutcliffe, Chris and Black, Kate and Paoletti, Paolo and Green, Peter L.},
+TITLE = {Automatic fault detection for laser powder-bed fusion using semi-supervised machine learning},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {27},
+YEAR = {2019},
+PAGES = {42--53},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2019.01.006},
+URL = {https://www.sciencedirect.com/science/article/pii/S2214860418308741},
+}
+
+% NOTE = {Off-axis IR thermography frames + lightweight CNN classify delamination/spatter on H13 LPBF coupons; reports mean balanced accuracy 96.8\,\% and Cohen's $\kappa = 96.4\,\%$; provides class-activation heatmaps for operator interpretability.}
+@Article{Baumgartl2020IRCNN,
+AUTHOR = {Baumgartl, Hermann and Tomas, Josef and Buettner, Ricardo and Merkel, Markus},
+TITLE = {A deep learning-based model for defect detection in laser-powder bed fusion using in-situ thermographic monitoring},
+JOURNAL = {Prog. Addit. Manuf.},
+VOLUME = {5},
+YEAR = {2020},
+PAGES = {277--285},
+DOI = {10.1007/s40964-019-00108-3},
+URL = {https://link.springer.com/article/10.1007/s40964-019-00108-3},
+}
+
+% NOTE = {LPBF ATI 718Plus; four physics-informed meltpool signatures from a dual-wavelength imaging pyrometer feed simple ML classifiers and a CNN baseline; reports $F_{1} > 0.95$ for pore type/severity, comparable to the CNN baseline using raw imagery.}
+@Article{Smoqi2022Meltpool,
+AUTHOR = {Smoqi, Ziyad and Gaikwad, Aniruddha and Bevans, Benjamin and Kobir, Md Humaun and Craig, James and Abul-Haj, Alan and Peralta, Alonso and Rao, Prahalada},
+TITLE = {Monitoring and prediction of porosity in laser powder bed fusion using physics-informed meltpool signatures and machine learning},
+JOURNAL = {J. Mater. Process. Technol.},
+VOLUME = {304},
+YEAR = {2022},
+PAGES = {117550},
+ISSN = {0924-0136},
+DOI = {10.1016/j.jmatprotec.2022.117550},
+URL = {https://www.sciencedirect.com/science/article/pii/S0924013622000814},
+}
+
+% NOTE = {LPBF SS\,304L; voxel-level thermal features (including neighboring voxels) drive a random-forest classifier registered to micro-CT labels; test $F_{1} > 0.96$ for micropore prediction; code released on GitHub for reproducibility.}
+@Article{Estalaki2022Voxel,
+AUTHOR = {Estalaki, Sina Malakpour and Lough, Cody S. and Landers, Robert G. and Kinzel, Edward C. and Luo, Tengfei},
+TITLE = {Predicting defects in laser powder bed fusion using in-situ thermal imaging data and machine learning},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {58},
+YEAR = {2022},
+PAGES = {103008},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2022.103008},
+URL = {https://www.sciencedirect.com/science/article/pii/S2214860422004274},
+}
+
+% NOTE = {U-Net variants segment pores and cracks on AM XCT slices; reports best mean IoU $0.993$ in-domain, illustrating high pixel-level supervised accuracy alongside strong label-cost dependence.}
+@Article{Wong2022UNet,
+AUTHOR = {Wong, Vivian W. and Ferguson, Max and Law, Kincho and Lee, Yung-Tsun T. and Witherell, Paul},
+TITLE = {Segmentation of Additive Manufacturing Defects Using {U-Net}},
+JOURNAL = {J. Comput. Inf. Sci. Eng.},
+VOLUME = {22},
+NUMBER = {3},
+YEAR = {2022},
+PAGES = {031005},
+DOI = {10.1115/1.4053078},
+URL = {https://asmedigitalcollection.asme.org/computingengineering/article-abstract/22/3/031005/1126484},
+}
+
+% NOTE = {EOS M290 near-IR optical tomography on 16 LPBF coupons; SOM-based unsupervised stage feeds a custom U-Net to detect lack-of-fusion and keyhole porosity, validated against CT; designed for robustness across process-parameter variation.}
+@Article{Ero2023OT,
+AUTHOR = {Ero, Osazee and Taherkhani, Katayoon and Toyserkani, Ehsan},
+TITLE = {Optical tomography and machine learning for in-situ defects detection in laser powder bed fusion: A self-organizing map and {U-Net} based approach},
+JOURNAL = {Addit. Manuf.},
+VOLUME = {78},
+YEAR = {2023},
+PAGES = {103894},
+ISSN = {2214-8604},
+DOI = {10.1016/j.addma.2023.103894},
+URL = {https://www.sciencedirect.com/science/article/pii/S2214860423005225},
+}
+
+% NOTE = {Explainable zero-bias DNN for one-class anomaly detection in composite extrusion AM using thermal + CCD camera fusion; reports $99.72\,\%$ multimodal accuracy vs.\ $98.28\,\%$ (CCD only) and $95\,\%$ (thermal only).}
+% Volume verified against Crossref (10.1016/j.ast.2024.109729, accessed 2026-09-17).
+@Article{Kumar2024MultiSource,
+AUTHOR = {Kumar, Deepak and Phillips, Nicholas A. and Liu, Yongxin and Namilae, Sirish},
+TITLE = {Multisource data fusion for defect detection in composite additive manufacturing using explainable deep neural network},
+JOURNAL = {Aerosp. Sci. Technol.},
+VOLUME = {155},
+YEAR = {2024},
+PAGES = {109729},
+DOI = {10.1016/j.ast.2024.109729},
+URL = {https://www.sciencedirect.com/science/article/pii/S1270963824006916},
+}
+
+% NOTE = {SAM-based ViT foundation model with unsupervised prompt generation segments LPBF CoCr pores from XCT without labels; reports DSC $> 80\,\%$ with bootstrap-based uncertainty; first foundation-model entry into AM porosity segmentation.}
+% Volume/issue/article number verified against Crossref (10.1038/s44334-025-00021-4, accessed 2026-09-17).
+@Article{Era2025SAM,
+AUTHOR = {Era, Israt Zarin and Ahmed, Imtiaz and Liu, Zhichao and Das, Srinjoy},
+TITLE = {An unsupervised approach towards promptable porosity segmentation in laser powder bed fusion by segment anything},
+JOURNAL = {npj Adv. Manuf.},
+VOLUME = {2},
+NUMBER = {1},
+PAGES = {10},
+YEAR = {2025},
+DOI = {10.1038/s44334-025-00021-4},
+URL = {https://www.nature.com/articles/s44334-025-00021-4},
+}
+
+% ===========================================================================
+% In-situ → property prediction (Chapter 2, property-prediction branch)
+% ===========================================================================
+
+% NOTE = {DED Inconel 718 thin walls; converts in-situ IR thermal histories into wavelet scalograms processed by a ResNet-18-based CNN to regress UTS; reports $R^{2} \approx 0.7$ on the test split with 5-fold CV across 135 tensile coupons.}
+@Article{Xie2021UTSResNet,
+AUTHOR = {Xie, Xinyi and Bennett, Jennifer and Saha, Sourav and Lu, Ye and Cao, Jian and Liu, Wing Kam and Gan, Zhengtao},
+TITLE = {Mechanistic data-driven prediction of as-built mechanical properties in metal additive manufacturing},
+JOURNAL = {npj Comput. Mater.},
+VOLUME = {7},
+YEAR = {2021},
+PAGES = {86},
+DOI = {10.1038/s41524-021-00555-z},
+URL = {https://www.nature.com/articles/s41524-021-00555-z},
+}
+
+% NOTE = {DED Inconel 718; FE thermal model (validated against IR) feeds a 1D-CNN that regresses UTS, YS, fracture stress and modulus; UTS $R^{2} = 0.96$ (train)/$0.67$ (test); shows that a single thermal index (cooling rate, $R^{2} = 0.32$) cannot replace the full thermal-history time series.}
+@Article{Fang2022Inconel1DCNN,
+AUTHOR = {Fang, Lichao and Cheng, Lin and Glerum, Jennifer A. and Bennett, Jennifer and Cao, Jian and Wagner, Gregory J.},
+TITLE = {Data-driven analysis of process, structure, and properties of additively manufactured {Inconel 718} thin walls},
+JOURNAL = {npj Comput. Mater.},
+VOLUME = {8},
+YEAR = {2022},
+PAGES = {126},
+DOI = {10.1038/s41524-022-00808-5},
+URL = {https://www.nature.com/articles/s41524-022-00808-5},
+}
+
+% NOTE = {LPBF Ti--6Al--4V; dropout neural network (DONN) predicts $\log N$ from CT-based pore statistics + surface roughness with leave-one-out CV; Pearson correlation $\approx 0.94$ with simultaneous uncertainty estimation.}
+@Article{Moon2021Fatigue,
+AUTHOR = {Moon, Sangjune and Ma, Ruixiang and Attardo, Roberto and Tomonto, Charles and Nordin, Curtis and Wheelock, Patrick and Glavicic, Michael and Layman, Marc and Billo, Robert and Luo, Tengfei},
+TITLE = {Impact of surface and pore characteristics on fatigue life of laser powder bed fusion {Ti--6Al--4V} alloy described by neural network models},
+JOURNAL = {Sci. Rep.},
+VOLUME = {11},
+YEAR = {2021},
+PAGES = {20424},
+DOI = {10.1038/s41598-021-99959-6},
+URL = {https://www.nature.com/articles/s41598-021-99959-6},
+}
+
+% NOTE = {Photodiode signals from LPBF Ti--6Al--4V converted to 2D bitmaps; ResNet-101 transfer-learning regression yields UTS $R^{2} = 0.89$ and elongation $R^{2} = 0.96$ under 5-fold CV; demonstrates ms-scale in-situ-to-property inference suited for closed-loop control.}
+% Volume/issue/pages verified against Crossref (10.1089/3dp.2023.0186, accessed 2026-09-17).
+@Article{Luo2025TransferTi,
+AUTHOR = {Luo, Qian and Yin, Lichao and Simpson, Timothy W. and Beese, Allison M.},
+TITLE = {An Image-Based Transfer Learning Approach for Using In Situ Processing Data to Predict {LPBF Ti--6Al--4V} Mechanical Properties},
+JOURNAL = {3D Print. Addit. Manuf.},
+VOLUME = {12},
+NUMBER = {1},
+PAGES = {48--60},
+YEAR = {2025},
+DOI = {10.1089/3dp.2023.0186},
+URL = {https://www.liebertpub.com/doi/10.1089/3dp.2023.0186},
+}
+
+% ===========================================================================
+% Deep learning methods (Chapter 3)
+% ===========================================================================
+
+@inproceedings{Dosovitskiy2021ViT,
+  author    = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
+  title     = {An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2021}
+}
+
+@inproceedings{Lin2017FocalLoss,
+  author    = {Lin, Tsung-Yi and Goyal, Priya and Girshick, Ross and He, Kaiming and Doll{\'a}r, Piotr},
+  title     = {Focal Loss for Dense Object Detection},
+  booktitle = {IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {2980--2988},
+  year      = {2017},
+  doi       = {10.1109/ICCV.2017.324}
+}
+
+@inproceedings{Ghiasi2021CopyPaste,
+  author    = {Ghiasi, Golnaz and Cui, Yin and Srinivas, Aravind and Qian, Rui and Lin, Tsung-Yi and Cubuk, Ekin D. and Le, Quoc V. and Zoph, Barret},
+  title     = {Simple {Copy-Paste} is a Strong Data Augmentation Method for Instance Segmentation},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {2918--2928},
+  year      = {2021},
+  doi       = {10.1109/CVPR46437.2021.00294}
+}
+
+@inproceedings{Cui2019ClassBalanced,
+  author    = {Cui, Yin and Jia, Menglin and Lin, Tsung-Yi and Song, Yang and Belongie, Serge},
+  title     = {Class-Balanced Loss Based on Effective Number of Samples},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {9268--9277},
+  year      = {2019},
+  doi       = {10.1109/CVPR.2019.00949}
+}
+
+@inproceedings{Ronneberger2015UNet,
+  author    = {Ronneberger, Olaf and Fischer, Philipp and Brox, Thomas},
+  title     = {{U-Net}: Convolutional Networks for Biomedical Image Segmentation},
+  booktitle = {Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  pages     = {234--241},
+  year      = {2015},
+  doi       = {10.1007/978-3-319-24574-4_28}
+}
+
+% Pages and DOI verified against ACM DL / CVF listings (dl.acm.org/doi/10.1007/978-3-030-01234-2_49, accessed 2026-09-15).
+@inproceedings{Chen2018DeepLabV3Plus,
+  author    = {Chen, Liang-Chieh and Zhu, Yukun and Papandreou, George and Schroff, Florian and Adam, Hartwig},
+  title     = {Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  pages     = {801--818},
+  year      = {2018},
+  doi       = {10.1007/978-3-030-01234-2_49}
+}
+
+@Article{Srivastava2014Dropout,
+  author  = {Srivastava, Nitish and Hinton, Geoffrey and Krizhevsky, Alex and Sutskever, Ilya and Salakhutdinov, Ruslan},
+  title   = {{Dropout}: A Simple Way to Prevent Neural Networks from Overfitting},
+  journal = {J. Mach. Learn. Res.},
+  volume  = {15},
+  number  = {56},
+  pages   = {1929--1958},
+  year    = {2014}
+}
+
+@Misc{Hinton2015KD,
+  author       = {Hinton, Geoffrey and Vinyals, Oriol and Dean, Jeff},
+  title        = {Distilling the Knowledge in a Neural Network},
+  year         = {2015},
+  howpublished = {arXiv preprint arXiv:1503.02531},
+  doi          = {10.48550/arXiv.1503.02531},
+  note         = {Presented at the NIPS 2014 Deep Learning and Representation Learning Workshop}
+}
+
+@inproceedings{Loshchilov2019AdamW,
+  author    = {Loshchilov, Ilya and Hutter, Frank},
+  title     = {Decoupled Weight Decay Regularization},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2019}
+}
+
+% Pages and DOI verified against the CVF/IEEE listing (openaccess.thecvf.com ICCV 2019, accessed 2026-09-15).
+@inproceedings{Yun2019CutMix,
+  author    = {Yun, Sangdoo and Han, Dongyoon and Oh, Seong Joon and Chun, Sanghyuk and Choe, Junsuk and Yoo, Youngjoon},
+  title     = {{CutMix}: Regularization Strategy to Train Strong Classifiers with Localizable Features},
+  booktitle = {IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {6023--6032},
+  year      = {2019},
+  doi       = {10.1109/ICCV.2019.00612}
+}
+
+@article{Oquab2024DINOv2,
+  title   = {{DINOv2}: Learning Robust Visual Features without Supervision},
+  author  = {Oquab, Maxime and Darcet, Timoth{\'e}e and Moutakanni, Th{\'e}o and Vo, Huy and Szafraniec, Marc and Khalidov, Vasil and Fernandez, Pierre and Haziza, Daniel and Massa, Francisco and El-Nouby, Alaaeldin and others},
+  journal = {Trans. Mach. Learn. Res.},
+  year    = {2024}
+}
+
+% Pages and DOI verified against Crossref (10.1109/ICCV48922.2021.01196, accessed 2026-09-17).
+@inproceedings{Ranftl2021DPT,
+  title     = {Vision Transformers for Dense Prediction},
+  author    = {Ranftl, Ren{\'e} and Bochkovskiy, Alexey and Koltun, Vladlen},
+  booktitle = {IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages     = {12159--12168},
+  year      = {2021},
+  doi       = {10.1109/ICCV48922.2021.01196}
+}
+
+@inproceedings{Darcet2024Registers,
+  title     = {Vision Transformers Need Registers},
+  author    = {Darcet, Timoth{\'e}e and Oquab, Maxime and Mairal, Julien and Bojanowski, Piotr},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024}
+}
+
+% ===========================================================================
+% Domain shift / transfer learning (Chapters 4-5)
+% ===========================================================================
+
+@Book{Quinonero2009DatasetShift,
+  editor    = {Qui{\~n}onero-Candela, Joaquin and Sugiyama, Masashi and Schwaighofer, Anton and Lawrence, Neil D.},
+  title     = {Dataset Shift in Machine Learning},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA, USA},
+  year      = {2009}
+}
+
+@inproceedings{Torralba2011DatasetBias,
+  author    = {Torralba, Antonio and Efros, Alexei A.},
+  title     = {Unbiased Look at Dataset Bias},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {1521--1528},
+  year      = {2011},
+  doi       = {10.1109/CVPR.2011.5995347}
+}
+
+@Article{Pan2010TransferLearning,
+  author  = {Pan, Sinno Jialin and Yang, Qiang},
+  title   = {A Survey on Transfer Learning},
+  journal = {IEEE Trans. Knowl. Data Eng.},
+  volume  = {22},
+  number  = {10},
+  pages   = {1345--1359},
+  year    = {2010},
+  doi     = {10.1109/TKDE.2009.191}
+}
