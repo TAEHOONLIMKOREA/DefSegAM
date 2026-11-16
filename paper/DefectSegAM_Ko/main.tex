@@ -13,6 +13,7 @@
 \usepackage{kotex}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{makecell}   % two-line column headings (\makecell) in tables
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{multirow}
@@ -30,6 +31,17 @@
 % metadata that must be verified before submission.
 \newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
 \DeclareMathOperator*{\argmax}{arg\,max}
+
+% ---- Page-layout tuning (Korean working copy) ----------------------------
+% kotex's inter-syllable glue has no stretch, so pdfTeX gives up on some
+% mostly-Hangul lines (Overfull \hbox) unless an emergency pass is allowed.
+\setlength{\emergencystretch}{2em}
+% LaTeX's default \topfraction=0.7 strands any [t] float taller than
+% 0.7*\textheight (384 pt here) -- and every later float of the same kind --
+% until the end of the document. Allow tall tables at page tops; floats that
+% fill a page on their own use [tp] instead.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
 
 \journal{Additive Manufacturing}
 
