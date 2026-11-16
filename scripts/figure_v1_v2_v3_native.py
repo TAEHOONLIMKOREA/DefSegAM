@@ -76,6 +76,19 @@ V3_PALETTE = np.array([
     [0.40, 0.40, 0.40], [0.10, 0.70, 0.70],
 ])
 
+# v4 = 11-class (vitb14_reg backbone). v3 에서 제거됐던 Incomplete Spreading 유지 +
+# Under Melting 신규 학습. Misprint 만 빠짐. 팔레트는 compare_v3_v4 통합 팔레트와 동일.
+V4_NAMES = [
+    "Powder", "Printed", "Recoater Hopping", "Recoater Streaking",
+    "Incomplete Spreading", "Swelling", "Debris", "Super-Elevation",
+    "Spatter", "Over Melting", "Under Melting",
+]
+V4_PALETTE = np.array([
+    [0.85, 0.85, 0.85], [0.30, 0.50, 0.85], [0.95, 0.55, 0.10], [0.90, 0.85, 0.15],
+    [0.20, 0.65, 0.30], [0.55, 0.30, 0.75], [0.50, 0.35, 0.20], [0.95, 0.40, 0.65],
+    [0.40, 0.40, 0.40], [0.10, 0.70, 0.70], [0.75, 0.20, 0.10],
+])
+
 VERSIONS = [
     ("v1", "12-class", V1_NAMES, V1_PALETTE,
      "vits14_dpt_dual_sz1036_1gpu_nanfix/stage2_best.pt"),
@@ -83,6 +96,8 @@ VERSIONS = [
      "vits14_dpt_dual_sz1036_8cls_v2/stage2_best_fold5_v2022_Maraging.pt"),
     ("v3", "10-class", V3_NAMES, V3_PALETTE,
      "vits14_dpt_dual_sz1036_10cls_v3/stage2_best.pt"),
+    ("v4", "11-class", V4_NAMES, V4_PALETTE,
+     "vitb14_reg_dpt_dual_sz1036_11cls_v4/stage2_best.pt"),
 ]
 
 
@@ -132,17 +147,20 @@ def present_class_handles(pred, names, palette):
 # Figure (per layer)
 # ============================================================================
 def make_figure(i0, i1, preds, out_path: Path, title: str) -> None:
-    fig = plt.figure(figsize=(21, 13))
-    gs = gridspec.GridSpec(2, 6, figure=fig, height_ratios=[1.0, 1.25],
+    n = len(VERSIONS)              # 하단 예측 패널 수 (현재 v1/v2/v3/v4 = 4)
+    ncol = 2 * n                   # 패널마다 2칸 → 총 2n칸
+    fig = plt.figure(figsize=(5.25 * n, 13))
+    gs = gridspec.GridSpec(2, ncol, figure=fig, height_ratios=[1.0, 1.25],
                            hspace=0.12, wspace=0.06)
 
-    # 상단: 입력 2장 (가운데 정렬되게 col 1-2, 3-4 사용)
-    ax0 = fig.add_subplot(gs[0, 1:3]); ax0.imshow(i0, cmap="gray")
+    # 상단: 입력 2장 — 하단 패널들 위에 가운데 정렬
+    q = ncol // 4
+    ax0 = fig.add_subplot(gs[0, q:ncol // 2]); ax0.imshow(i0, cmap="gray")
     ax0.set_title("visible/0 (after melt)", fontsize=13)
-    ax1 = fig.add_subplot(gs[0, 3:5]); ax1.imshow(i1, cmap="gray")
+    ax1 = fig.add_subplot(gs[0, ncol // 2:ncol - q]); ax1.imshow(i1, cmap="gray")
     ax1.set_title("visible/1 (after spread)", fontsize=13)
 
-    # 하단: v1/v2/v3 native (각 col 2칸씩)
+    # 하단: 각 버전 native (각 col 2칸씩)
     for k, (vid, vlabel, names, palette, _) in enumerate(VERSIONS):
         ax = fig.add_subplot(gs[1, 2 * k:2 * k + 2])
         pred = preds[vid]
@@ -225,8 +243,9 @@ def main():
                          for vid, m in models.items()}
                 short = build.replace(" ", "_").replace("TCR_Phase_1_", "")
                 out_path = out_dir / f"{short}_layer{li:04d}.png"
+                vstr = "/".join(v[0] for v in VERSIONS)
                 make_figure(i0, i1, preds, out_path,
-                            title=f"{build} — layer {li} — v1/v2/v3 native 추론 비교")
+                            title=f"{build} — layer {li} — {vstr} native 추론 비교")
                 fig_count += 1
                 print(f"  [{fig_count:2d}] saved {out_path.relative_to(REPO_ROOT)}")
 
