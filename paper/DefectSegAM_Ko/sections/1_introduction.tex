@@ -50,9 +50,9 @@ Section~\ref{sec:results}에서 보이듯이, 그 외 모든 조건이 동일한
 파이프라인에 배포된 dynamic segmentation convolutional neural network
 (DSCNN)~\cite{Scime2020DSCNN}가 데이터셋에 제공한 결함 채널만을 입력하면
 인장강도(ultimate tensile strength, UTS) 예측의 평균 제곱근
-오차(root-mean-square error, RMSE)가 70.7~MPa로 붕괴하여 단순(naive) 전역 평균
-예측기의 68.4~MPa보다도 나빠지는 반면, 동일한 파이프라인에 본 논문이 제안하는
-모델의 결함 맵을 입력하면 37.5~MPa에 도달한다.
+오차(root-mean-square error, RMSE)가 단순(naive) 전역 평균 예측기보다도 나쁜
+수준으로 붕괴하는 반면, 동일한 파이프라인에 본 논문이 제안하는 모델의 결함
+맵을 입력하면 그 오차가 단순 예측기 대비 절반 가까이 줄어든다.
 
 더 나은 분말 베드 세그멘테이션을 가로막는 중심 장애물은 어노테이션 부족이다.
 수 메가픽셀 규모의 레이어 이미지를 전문가가 픽셀 단위로 라벨링하는 작업은
@@ -84,32 +84,27 @@ DINOv2 ViT-B/14 인코더~\cite{Oquab2024DINOv2,Darcet2024Registers}는 전체�
 비용이 들지 않는 의사 라벨(pseudo-label)로 사용하는 지식 증류(knowledge
 distillation)로 디코더를 사전학습하고, Stage~2에서는 여섯 개의 L-PBF 소스와
 두 개의 바인더 젯팅(binder jetting) 소스에서 취합되어 통일된 11-클래스
-온톨로지(Table~\ref{tab:classes})로 재매핑된 125개의 사람 어노테이션 레이어에
-대해 미세조정한다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. ORNL 코퍼스의
-극단적인 클래스 불균형---약 $1.5\times10^{10}$개의 Powder 픽셀부터 25개의
-Recoater Hopping 픽셀에 이르는---은 역빈도(inverse-frequency) 클래스 인지
-샘플링, Copy-Paste 증강~\cite{Ghiasi2021CopyPaste}, focal
-loss~\cite{Lin2017FocalLoss}로 대응한다. 아울러 Peregrine 데이터셋 어휘에
-혼재된 원인 기준과 외형 기준을 정리하고 ASTM E3353-22 표준
-지침~\cite{ASTME3353}이 예시하는 이상 용어와의 대응을 명시하여, 레이어
-이미지에 나타난 특징을 판정 기준으로 결함을 정의하는 외형
-기준(appearance-based) 분류 체계를 실험과 별도의 제안으로
-제시한다(Section~\ref{sec:method-taxonomy}).
+온톨로지(Table~\ref{tab:classes})로 재매핑된 사람 어노테이션 레이어에 대해
+미세조정한다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. ORNL 코퍼스의
+극단적인 클래스 불균형(Section~\ref{sec:method-problem})은
+역빈도(inverse-frequency) 클래스 인지 샘플링, Copy-Paste
+증강~\cite{Ghiasi2021CopyPaste}, focal
+loss~\cite{Lin2017FocalLoss}로 대응한다. 아울러 향후 어노테이션을 위한
+외형 기준(appearance-based) 결함 분류 체계를
+제안한다(Section~\ref{sec:method-taxonomy}).
 
-본 연구의 평가 설계에는 방법론적으로 미묘한 쟁점이 반영되어 있다. ORNL 양산
-빌드에서 이용 가능한 밀집 라벨은 그 자체가 DSCNN의 예측이므로, 해당 빌드에서
-계산된 일치도 지표는 세그멘테이션 정확도가 아니라 교사(teacher)에 대한
-충실도를 측정하며, 원리적으로도 학생(student)이 교사를 능가함을 보여줄 수
-없다. 따라서 본 연구는 모든 학습에서 제외된(held-out) 사람 ground truth를
-기준으로 평가한다: (i) Concept Laser M2(L-PBF)와 ExOne Innovent(바인더 젯팅)
-장비의 네 개 빌드에 걸쳐 저자들이 어노테이션한 37개의 이미지 스택을 제공하는
-2025 Peregrine in-situ 모니터링 및 학습
-데이터셋(OSTI~2588140)~\cite{Peregrine_v2025_TODO}, 그리고 (ii) 장비
-간(cross-machine) 일반화를 검증하기 위해 저자들이 현재 수집 및 픽셀 라벨링을
-진행하고 있는 Veltz M160 및 M280 장비와 EOS PBF 장비의 리코팅 이미지가
+평가 설계에서는, ORNL 양산 빌드의 밀집 라벨이 DSCNN의 예측이어서 해당 빌드의
+지표가 교사(teacher) 일치도에 그치므로(Section~\ref{sec:setup-metrics}), 정확도
+주장은 모든 학습에서 제외된(held-out) 사람 ground truth만을 기준으로 한다:
+(i) 외부 2025 Peregrine held-out
+세트~\cite{Peregrine_v2025_TODO}(Section~\ref{sec:setup-heldout-peregrine}),
+그리고 (ii) 장비 간(cross-machine) 일반화를 검증하기 위해 저자들이 현재
+수집 및 픽셀 라벨링을 진행하고 있는 Veltz M160 및 M280 장비와 EOS PBF
+장비의 리코팅 이미지(Section~\ref{sec:setup-heldout-crossmachine})가
 그것이다. DefectSegAM과 동일한 데이터로 학습한
 DSCNN~\cite{Scime2020DSCNN}의 충실한 재구현을 주요 베이스라인으로 사용한다. \TODO{held-out 사람 GT 실험과 장비 간
-실험(Tables~\ref{tab:heldout-main} 및~\ref{tab:crossmachine})은 계획되어
+실험(Sections~\ref{sec:results-heldout}
+및~\ref{sec:results-crossmachine})은 계획되어
 있으나 아직 수행되지 않았다; 결과가 나오는 대로 이 문단에 대표 수치를 삽입할
 것.}
 
@@ -118,21 +113,21 @@ DSCNN~\cite{Scime2020DSCNN}의 충실한 재구현을 주요 베이스라인으�
   \item \textbf{아키텍처.} 각 레이어의 도포 직후 이미지와 용융 직후 이미지에
         공유되는, 레지스터 토큰을 갖는 고정 DINOv2 ViT-B/14 인코더를,
         명시적 차분 항을 포함하는 단계별(per-stage) 이중 이미지 융합 및 DPT
-        방식 다중 스케일 디코더와 결합한 DefectSegAM을 제안한다. 86~M개의
-        고정 백본 위에서 14.6~M개의 파라미터만이 학습되므로, 시각 표현은
-        플랫폼마다 다시 학습되는 대신 장비와 소재 전반에 걸쳐
-        상각(amortize)된다.
-  \item \textbf{라벨 효율적 2단계 학습.} 배포된 양산 모델로부터의 지식
-        증류(12{,}607개의 의사 라벨 레이어)와, 통일된 11-클래스 온톨로지
-        아래 여덟 개의 이종 장비--소재 소스에서 취합한 단 125개의 사람
-        어노테이션 레이어에 대한 미세조정을 결합하고, 여러 자릿수에 걸쳐
+        방식 다중 스케일 디코더와 결합한 DefectSegAM을 제안한다. 고정 백본
+        위에서 디코더와 헤드만이 학습되므로, 시각 표현은 플랫폼마다 다시
+        학습되는 대신 장비와 소재 전반에 걸쳐 상각(amortize)된다.
+  \item \textbf{라벨 효율적 2단계 학습.} 배포된 양산 모델의 의사 라벨
+        레이어로부터의 지식 증류와, 통일된 11-클래스 온톨로지 아래 여덟 개의
+        이종 장비--소재 소스에서 취합한 소규모 사람 어노테이션 레이어에 대한
+        미세조정을 결합하고, 여러 자릿수에 걸쳐
         차이 나는 클래스별 픽셀 수에는 클래스 인지 샘플링, Copy-Paste 증강,
         focal loss로 대응한다.
-  \item \textbf{Held-out 사람 GT 평가 프로토콜.} 교사 일치도 함정을 회피하는
-        평가 스위트를 명시한다: 학습에 전혀 사용되지 않은 외부 2025
-        Peregrine 사람 어노테이션 벤치마크, Veltz M160/M280 및 EOS PBF
-        장비의 장비 간 테스트 이미지(수집 및 라벨링 진행 중), 그리고 동일한
-        데이터로 충실히 재구현·학습된 DSCNN 베이스라인이 그것이다.
+  \item \textbf{Held-out 사람 GT 평가 프로토콜.} 사람 GT만을 정확도의
+        기준으로 삼는 평가 스위트를 명시한다: 학습에 전혀 사용되지 않은
+        외부 2025 Peregrine 사람 어노테이션 벤치마크, Veltz M160/M280 및
+        EOS PBF 장비의 장비 간 테스트 이미지(수집 및 라벨링 진행 중),
+        그리고 동일한 데이터로 충실히 재구현·학습된 DSCNN 베이스라인이
+        그것이다.
         \TODO{프로토콜은 정의되었으나 실험은
         미수행(Section~\ref{sec:setup}).}
   \item \textbf{하류 유용성 사례 연구.} 이미 발표된 인장 특성 예측
@@ -140,25 +135,26 @@ DSCNN~\cite{Scime2020DSCNN}의 충실한 재구현을 주요 베이스라인으�
         통해, 데이터셋이 제공하는 DSCNN 맵은 단순 전역 평균 예측기 아래로
         붕괴하는 반면(UTS RMSE 70.7 대 68.4~MPa), DefectSegAM 맵은 단순
         베이스라인 대비 45.2\% 낮은 37.5~MPa에 도달하며 네 가지 인장 특성
-        모두에서 개선을 보임을 확인한다(Table~\ref{tab:downstream}).
+        모두에서 개선을 보임을 확인한다(Section~\ref{sec:results-downstream}).
   \item \textbf{외형 기준 결함 분류 체계(부수적 제안).} 실험과 별도로,
         Peregrine 어휘에 혼재된 원인 기준과 외형 기준을 분리하여 레이어
         이미지 특징을 판정 기준으로 정의한 결함 8종(Under Melting 처리 확정 전
         기준)과 배경 2종의 체계를 향후 어노테이션을 위해 제안하고, 기존
         라벨 공간 및 ASTM E3353-22 용어와의
         대응(Table~\ref{tab:taxonomy})과 데이터 가용성을
-        정리한다(Section~\ref{sec:method-taxonomy}). 본 논문이 제안하는
-        모델의 모든 정량 결과는 기존 11-클래스 온톨로지로 얻은 것이다.
+        정리한다(Section~\ref{sec:method-taxonomy}).
         \TODO{제안 체계로 재어노테이션한 뒤 재학습·재평가할
         것(Section~\ref{sec:method-taxonomy}).}
 \end{enumerate}
 
 본 논문의 나머지 부분은 다음과 같이 구성된다. Section~\ref{sec:related}에서는
 분말 베드 모니터링, ex-situ 라벨 기반 결함 검출, AM 분야의 파운데이션 모델,
-결함-물성 모델링에 관한 관련 연구를 검토한다. Section~\ref{sec:method}에서는
-DefectSegAM의 아키텍처, 제안하는 외형 기준 결함 분류 체계, 학습 레시피, 추론
-파이프라인을 상술한다.
-Section~\ref{sec:setup}에서는 데이터셋, held-out 사람 GT 평가 프로토콜,
-베이스라인을 기술한다. Section~\ref{sec:results}에서는 세그멘테이션 및 하류
+결함-물성 모델링에 관한 관련 연구를 검토하고 연구 공백을 종합한다.
+Section~\ref{sec:method}에서는 문제 설정과 실험용 11-클래스 온톨로지,
+제안하는 외형 기준 결함 분류 체계, DefectSegAM의 아키텍처, 2단계 학습
+레시피, 클래스 불균형 대응 전략, 그리고 증강·추론·후처리 파이프라인을
+차례로 상술한다. Section~\ref{sec:setup}에서는 데이터셋, held-out 사람 GT
+평가 프로토콜, 베이스라인, 평가 지표, 구현 세부사항과 다운스트림 물성
+예측 설정을 기술한다. Section~\ref{sec:results}에서는 세그멘테이션 및 하류
 물성 예측 결과를 보고하고, Section~\ref{sec:discussion}에서는 한계와 시사점을
 논의하며, Section~\ref{sec:conclusion}에서 결론을 맺는다.

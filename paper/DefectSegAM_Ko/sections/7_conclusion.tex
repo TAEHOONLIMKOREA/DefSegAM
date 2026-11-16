@@ -5,65 +5,48 @@
 \section{결론}
 \label{sec:conclusion}
 
-본 논문은 register 를 갖춘 frozen DINOv2 ViT-B/14 인코더(86\,M 파라미터)를
-14.6\,M 학습 가능 파라미터의 DPT 스타일 다중 스케일 decoder 와 결합한,
-powder bed fusion 적층제조를 위한 레이어 단위 결함 세그멘테이션 모델
-DefectSegAM 을 제시하였다. 모델은 레이어당 두 카메라 뷰---용융
-직후(post-melting) 이미지와 도포 직후(post-spreading) 이미지---를 모두
-입력받아, 두 피처 맵과 그 차분을 채널 방향으로 연결(concatenation)하는
-명시적 변화 단서(change cue)를 통해 네 개의 transformer 깊이에서 융합한
-뒤, $1036 \times 1036$ 해상도의 11-class 픽셀 단위 결함 맵을 디코딩한다.
-라벨 효율적인 2-stage 레시피는 먼저 production DSCNN 이 의사 라벨링한
-12{,}607개 ORNL 빌드 레이어로 decoder 를 사전학습한 뒤, laser powder bed
-fusion 과 binder jetting 에 걸친 여덟 개 장비/소재 소스에서 추출한 단
-125개의 전문가 주석 레이어로 미세조정하며, 역빈도 class-aware 샘플링,
-희소 결함 클래스의 Copy-Paste 증강, 그리고 focal loss 를 통해 15.33
-billion 개의 powder 픽셀에서 가장 희소한 결함 클래스의 25 픽셀까지 이르는
-극단적인 클래스 불균형에 대응한다. 아울러 실험과는 별도로, 데이터셋 어휘에
-혼재된 원인 기준과 외형 기준을 분리하여 레이어 이미지에 나타난 특징을 판정
-기준으로 정의한 결함 8종(Under Melting 처리 확정 전 기준)과 배경 2종의
-분류 체계를 향후 주석을 위해 제안하고 기존 라벨 공간 및 ASTM E3353-22
-표준 용어와의 대응을 명시하였다.
+본 논문은 frozen 비전 파운데이션 인코더 위에서 디코더만을 학습하고,
+레이어당 두 카메라 뷰(용융 직후와 도포 직후)를 명시적 변화 단서(change
+cue)로 융합하며, 의사 라벨 사전학습과 소규모 전문가 주석 미세조정을
+결합한 powder bed fusion 레이어 단위 결함 세그멘테이션 모델
+DefectSegAM 을 제시하였다. 아울러 데이터셋 어휘에 혼재된 원인 기준과
+외형 기준을 분리하여 레이어 이미지에 나타난 특징을 판정 기준으로 정의한
+결함 분류 체계를 향후 주석을 위해 제안하고, 기존 라벨 공간 및 ASTM
+E3353-22 표준 용어와의 대응을 명시하였다.
 
-ORNL Co-Registered 빌드에서 DefectSegAM 은 production 모델이 신뢰할 만한
-곳에서는 이를 가깝게 따르면서도, 일관되고 결함에 민감한 방향으로
-이탈한다. 결함 다수(defect-rich) 빌드 B1.2 에서 이전 내부 세대의
-0.4291--0.4455 대비 0.5047 의 일치도(agreement) mIoU 를 달성하며, 이는
-lack-of-fusion 및 keyhole 기공의 전조인 용융 에너지 클래스 Under
-Melting(0.8643)과 Over Melting(0.4715)이 주도한 결과이다. 이 맵들의
-가치는 세그멘테이션과 전혀 별개인 외부 태스크에서 입증되었다. 6{,}373개
-시편에 대한 그 외 조건이 동일한 segmentation-only 인장 물성 파이프라인에서
-데이터셋 제공 DSCNN 맵을 DefectSegAM 으로 교체하자, 인장강도(UTS) RMSE 가
-naive 전역 평균 기준선 68.4\,MPa 보다도 나쁜 70.7\,MPa 에서 37.5\,MPa 로
-감소하였으며, 항복강도(YS), 인장강도(UTS), 균일연신율(UE),
-총연신율(TE) 전반에 걸쳐 해당 기준선 대비 26--45\,\% 의 일관된 감소를
-보였다. 이 붕괴-복원(collapse-to-recovery) 대비는 다운스트림 물성 예측을
-지배하는 것이 집계 표현의 단순성이 아니라 세그멘테이션 소스의 정보량임을
-보여준다. 결정적인 세그멘테이션 수준 비교---2025 Peregrine 릴리스의
-held-out 사람 ground truth 와 수집이 진행 중인 저자 라벨링 Veltz
-M160/M280 및 EOS 이미지에서 충실히 재구현된 DSCNN 을 상대로 하는
-비교---는 본 논문에서 완전하게 명세되었으며 그 수행은 향후 과제로 남아
-있다. \TODO{\ref{sec:results}절에 스캐폴딩된 held-out, cross-machine,
-ablation 평가를 완료할 것.}
+완료된 측정에서 확인한 바는 세 가지이다. 첫째, ORNL Co-Registered
+빌드에서의 일치도 분석(\ref{sec:results-agreement}절)에서 DefectSegAM 은
+production DSCNN 이 신뢰할 만한 곳에서는 이를 가깝게 따르면서도, 일관되고
+결함에 민감한 방향으로---production 모델이 부분적으로만 검출하거나
+놓치는 Recoater Streaking 과 Spatter 영역을 포착하는 쪽으로---이탈하였다.
+이전 내부 세대 대비 일치도의 이득은 결함 다수(defect-rich) 빌드 B1.2 에서
+나타났고, lack-of-fusion 및 keyhole 기공의 전조인 용융 에너지 클래스가
+이를 주도하였다. 둘째, 이 맵들의 가치는 세그멘테이션과 전혀 별개인 외부
+태스크(\ref{sec:results-downstream}절)에서 입증되었다. 그 외 조건이 동일한
+segmentation-only 인장 물성 파이프라인에서 데이터셋 제공 DSCNN 맵을
+DefectSegAM 맵으로 교체하자, naive 전역 평균 기준선보다도 나빴던
+인장강도(UTS) RMSE 70.7\,MPa 가 37.5\,MPa 로 감소하였고 네 가지 인장 특성
+모두에서 기준선 대비 개선이 나타났다. 이 붕괴-복원(collapse-to-recovery)
+대비는 다운스트림 물성 예측을 지배하는 것이 집계 표현의 단순성이 아니라
+세그멘테이션 소스의 정보량임을 보여준다. 셋째, 계산 효율
+프로파일(\ref{sec:results-efficiency}절)은 학습 가능 파라미터 수와 학습
+메모리 측면에서 frozen 인코더 설계의 비용 구조를 확인하지만, 생산 장비의
+도포(recoating) 간격 내 실행 여부를 가늠할 레이어당 추론 지연시간은 아직
+측정되지 않았다.
 
-여러 방향이 자연스럽게 이어진다. 첫째, 실시간 배포이다. frozen 인코더
-설계는 체크포인트당 14.6\,M 학습 가능 파라미터만 저장하지만, 세그멘테이션이
-생산 장비의 도포(recoating) 간격 내에 완료되도록 레이어당 추론 지연시간을
-벤치마크하고 필요하다면 단축해야 한다. 둘째, 폐루프(closed-loop) 제어이다.
-빌드 도중 가용한 결함 맵은 재도포(re-coating)나 파라미터 조정과 같은 교정
-조치를 촉발하여 모니터를 액추에이터로 전환할 수 있다. 11개 클래스 중 어느
-것이 이러한 개입을 게이트할 만큼 신뢰할 수 있는지를 정량화하는 것은
-held-out 평가가 답하기 시작할 열린 질문이다. 셋째, 범위의 확장이다. 전문가
-주석 코퍼스를 현재의 125개 레이어 너머로---특히 도메인 갭이 가장 큰
-binder jetting 과 추가적인 합금·장비에 대해---확장하고, DefectSegAM 을
-SS~316L 이외 소재의 물성 예측 파이프라인에 결합하는 것은 본 연구에서
-입증된 라벨 효율성이 계속 증가하는 powder bed fusion 시스템의 보급 기반
-전반에 걸쳐 누적적으로 작동하는지를 시험하게 될 것이다. 넷째, 분류 체계의
-확정이다. \ref{sec:method-taxonomy}절의 외형 기준 체계로 재주석하고
-재학습하면 Swelling 과 Super-Elevation 처럼 외형이 유사하여 구별하기 어려운
-클래스 쌍은 하나로 합쳐지지만, 신설되는 Powder Collapse 와 ORNL 코퍼스에
-25픽셀뿐인 Recoater Hopping 은 여전히 신규·희소 주석에 의존한다. 또한
-기존 Over Melting 라벨은 새 정의를 만족하는지 레이어별로 재검토한 뒤
-재매핑해야 하고, Under Melting 의 처리도 확정되어야 한다. 체계의 효과는
-주석자 간 일치도와 재산출된 per-class 일치도로 검증해야 하며, 이는 향후
-과제로 남는다.
+향후 과제는 네 가지이다. 첫째, held-out 사람 GT 평가이다. 2025 Peregrine
+릴리스의 held-out 사람 ground truth 에서 충실히 재구현된 DSCNN 을 상대로
+하는 결정적인 세그멘테이션 수준 비교는 본 논문에서 완전하게
+명세되었으며(\ref{sec:results-heldout}절) 그 수행은 향후 과제로 남아
+있다. 둘째, cross-machine 일반화이다. 수집과 라벨링이 진행 중인 저자
+라벨링 Veltz M160/M280 및 EOS 이미지에서, 장비별 재학습 없이 frozen 인코더
+설계가 장비·광학계·조명 조건을 가로질러 전이하는지를
+검증한다(\ref{sec:results-crossmachine}절). 셋째, 구성 요소 ablation 이다.
+이중 이미지 입력, 변화 단서, 의사 라벨 사전학습, class-aware 샘플링,
+Copy-Paste 증강, 백본 용량과 추론 시 옵션의 개별 기여를 같은 held-out
+세트에서 분리한다(\ref{sec:results-ablation}절).
+\TODO{\ref{sec:results-planned}절에 스캐폴딩된 held-out, cross-machine,
+ablation 평가를 완료할 것.} 넷째, 분류 체계의 확정이다. 제안한 외형 기준
+체계를 적용하려면 \ref{sec:method-taxonomy}절에 정리한 기존 라벨의
+재매핑과 Powder Collapse 등의 신규 주석이 선행되어야 하며, 그 효과는
+재주석 후 주석자 간 일치도와 재산출된 per-class 일치도로 검증해야 한다.

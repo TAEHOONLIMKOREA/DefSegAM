@@ -7,6 +7,16 @@
 \section{관련 연구}
 \label{sec:related}
 
+본 절에서는 DefectSegAM과 그 평가 설계의 배경이 되는 선행 연구를 네 갈래로
+검토한다. Section~\ref{sec:related-monitoring}에서는 레이어 단위 분말 베드
+모니터링과 DSCNN--Peregrine 계열, 그리고 이 계열이 물려준 결함 어휘를,
+Section~\ref{sec:related-exsitu}에서는 ex-situ ground truth로 지도되는 결함
+검출을, Section~\ref{sec:related-foundation}에서는 AM 분야의 파운데이션
+모델과 라벨 효율적 세그멘테이션을, Section~\ref{sec:related-property}에서는
+결함 맵에서 기계적 물성으로 이어지는 연구를 다룬다.
+Section~\ref{sec:related-gap}에서는 이들 연구 계열 전반의 공백을 종합하고 본
+연구의 위치를 밝힌다.
+
 \subsection{레이어 단위 분말 베드 모니터링과 DSCNN--Peregrine 계열}
 \label{sec:related-monitoring}
 
@@ -49,48 +59,21 @@ DSCNN--Peregrine 계열은 픽셀 단위 세그멘테이션을 플랫폼 규모 
 모니터링의 근간으로 확립하였으나, 이는 수십 개의 라벨링된 레이어에 대한
 장비별 지도학습이라는 비용을 수반한다.
 
-이 계열이 물려준 결함 어휘 자체도 검토가 필요하다. 예컨대 금속 PBF 결함
-리뷰는 결함을 발생 원인과 함께 정의하는 것이 관례이며, Grasso와 Colosimo의
-리뷰는 기공, balling, 기하 변형, 균열과 박리 등의 결함 유형을 각각의 발생
-원인과 연결하여 정리한다~\cite{Grasso2017Review}. 반면 분말 베드 이미지의
-이상 분류는 고해상도 레이어 이미징으로 관찰 가능한 공정 오류를 목록화한
-초기 연구~\cite{zurJacobsmuhlen2013HighRes}와 Scime와
+이 계열이 물려준 결함 어휘 자체도 검토가 필요하다: 금속 PBF 결함 리뷰는
+Grasso와 Colosimo의 리뷰~\cite{Grasso2017Review}처럼 결함을 발생 원인과
+함께 정의하는 것이 관례인 반면, 분말 베드 이미지의 이상 분류는 고해상도
+레이어 이미징으로 관찰 가능한 공정 오류를 목록화한 초기
+연구~\cite{zurJacobsmuhlen2013HighRes}와 Scime와
 Beuth~\cite{Scime2018Anomaly} 이래 시각 형상을 기준으로 클래스를 정의해
-왔으나, 그 명칭과 설명에는 여전히 원인이 섞여 있다. ASTM E3353-22 표준
-지침~\cite{ASTME3353}도 공개된 4절(Significance and Use)에서 L-PBF의
-광학·열 in-process 모니터링으로 검출할 분말층 이상의 원인을 리코팅
-오류(skipping, scraping, insufficient powder delivery, part strike)와 파트
-형성 오류(distortion, humping, balling, superelevation)로 범주화하고,
-레이어 이미지에서의 상세 기술은 본 연구가 검토하지 못한 8절(Layer
-Imaging)로 미룬다. 같은 4절은 과열(overheating)·overmelting 항목을 따로
-두어 그 징후로 과열 영역의 변색(scorching)과 humping 등의 표면 변화를
-들고, 과도한
-spatter/ejecta를 그 하위 항목으로 기술한다. 이를 DSCNN--Peregrine 어휘와
-대응시키면 skipping과 insufficient powder delivery는 모두 Incomplete
-Spreading에, scraping은 Recoater Streaking에, part strike는 Recoater
-Hopping에 대응한다. Distortion, humping, superelevation은 Swelling 또는
-Super-Elevation에(humping의 대응은 잠정적이다; Table~\ref{tab:taxonomy}),
-overmelting은 Over Melting에, spatter/ejecta는 Spatter에 대응하며,
-balling에는 L-PBF 클래스 공간에 대응 클래스가 없다(Peregrine v2021-03의
-전자빔 PBF 소스에만 Balling 클래스가 정의되어
-있다~\cite{Peregrine_v2021_03}). 이 범주는 원인 기준이며, 본 연구가 검토한
-공개부는 skipping과 insufficient powder delivery의 레이어 이미지 외형
-차이를 제시하지 않는다. 또한 저자들이 검토한 ORNL
-코퍼스와 사람 어노테이션 코퍼스도 둘을 구분하여 어노테이션하지
-않는다(Section~\ref{sec:method-taxonomy}). 반대로 Incomplete Spreading의
-정의는 분말 도포량 부족이라는 원인만 규정하므로, 얕은 미도포 자국과 분말이
-무너져 내린 형상처럼 외형이 크게 다를 수 있는 이상이 한 용어에 포함될 수
-있다. Peregrine 어휘 역시 외형 기준 클래스에 에너지 밀도라는 원인 기준의
-Over Melting과 Under Melting, CAD 의도 기준의 Misprint를 섞어 쓴다. 또한
-Peregrine v2021-03과 v2022-10 릴리스의 정의는 Swelling과 Super-Elevation을
-모두 파트가 분말 베드 위로 솟은 외형(warps up, extends above the powder
-bed)으로 기술하면서 국소 에너지 과잉과 분말 피복 부족·잔류 응력이라는
-원인 절로만 구분하므로~\cite{Peregrine_v2021_03,Peregrine_v2022_10}, 픽셀
-단위 어노테이션의 판정 기준이 클래스마다 다르다. ORNL Co-Registered
-데이터셋(v2023-11)의 정의는 두 클래스를 이와 다르게 기술하므로 릴리스
-사이에서도 판정 기준이 일치하지 않는다(Section~\ref{sec:method-taxonomy}).
-이러한 원인 기준과 외형 기준의 혼재가 Section~\ref{sec:method-taxonomy}에서
-외형 기준 결함 분류 체계를 제안하는 동기가 된다.
+왔으나, 그 명칭과 설명에는 여전히 원인이 섞여 있다. 예컨대 Peregrine
+v2021-03과 v2022-10 릴리스의 정의는 Swelling과 Super-Elevation을 모두
+파트가 분말 베드 위로 솟은 외형으로 기술하면서 원인 절로만
+구분하므로~\cite{Peregrine_v2021_03,Peregrine_v2022_10}, 픽셀 단위
+어노테이션의 판정 기준이 클래스마다 다르다. ASTM E3353-22 표준
+지침~\cite{ASTME3353}의 이상 범주 역시 원인 기준이다(상세 대응은
+Section~\ref{sec:method-taxonomy}). 이러한 원인 기준과 외형 기준의 혼재가
+Section~\ref{sec:method-taxonomy}에서 외형 기준 결함 분류 체계를 제안하는
+동기가 된다.
 
 \subsection{Ex-situ ground truth로 지도되는 결함 검출}
 \label{sec:related-exsitu}
@@ -168,9 +151,10 @@ $\approx 0.94$)~\cite{Moon2021Fatigue}; Luo 등은 전이학습으로 UTS $R^2 =
 가능하게 만들며, 본 연구는 Section~\ref{sec:results}에서 이 지렛대를
 활용한다.
 
-\paragraph{연구 공백과 본 연구의 위치}
-이러한 연구 계열 전반에서 세 가지 결핍이 두드러지며, 이에 더해 결함 어휘의
-판정 기준 혼재라는 실무적 문제가 있다. 첫째, 분말 베드
+\subsection{연구 공백과 본 연구의 위치}
+\label{sec:related-gap}
+
+이러한 연구 계열 전반에서 세 가지 결핍이 두드러진다. 첫째, 분말 베드
 세그멘테이션 모델은 여전히 수십 개의 어노테이션 레이어로 학습되는 장비별
 지도학습 네트워크에 머물러 있으며, 장비와 소재 간에 시각 지식을 공유하는
 메커니즘이 없다. 둘째, 평가가 도메인 내 일치도---배포된 모델의 자체 예측에
@@ -178,17 +162,13 @@ $\approx 0.94$)~\cite{Moon2021Fatigue}; Luo 등은 전이학습으로 UTS $R^2 =
 플랫폼으로의 일반화가 held-out 사람 ground truth를 기준으로 정량화되는
 경우는 드물다. 셋째, 결함 맵이 물성 모델의 입력으로 점점 더 많이 사용되고
 있음에도, 세그멘테이션 품질이 물성 예측에 대한 하류 가치로 평가되는 경우는
-거의 없다. 이에 더해 데이터셋의 결함 어휘가 원인 기준과 외형 기준을
-혼합하고 있어, 픽셀 단위 어노테이션의 판정 기준이 클래스마다 다르다.
-DefectSegAM은 세 가지 결핍을 다루며, 어휘의 문제에 대해서는 실험과 별도로
-외형 기준 분류 체계를 제안한다. 고정된 DINOv2 파운데이션
-인코더는 시각 표현을 여덟 개 장비--소재 소스에 걸쳐 상각하면서 14.6~M
-파라미터의 디코더만을 학습하고; 12{,}607개 양산 레이어에 대한 의사 라벨
-사전학습은 배포된 DSCNN을 경쟁자에서 비용이 들지 않는 교사로 전환하며,
-미세조정은 여섯 개의 L-PBF 소스와 두 개의 바인더 젯팅 소스에 걸친 125개의
-사람 어노테이션 레이어를 취합하고; 평가 프로토콜은 학습에서 한 번도 보지
-못한 장비의 이미지---그 수집과 라벨링이 진행 중이다---를 포함하는 held-out
-사람 GT 벤치마크와, 세그멘테이션 정보원만을 유일한 변경 요소로 하는 하류
-인장 특성 사례 연구를 결합한다. 마지막으로, 어휘 문제에 대한 응답인 외형 기준
-결함 분류 체계는 픽셀 어노테이션의 판정 기준을 통일하기 위한 제안이며, 본
-논문의 어떤 결과에도 사용되지 않았다.
+거의 없다. DefectSegAM은 이 세 가지 결핍을 다룬다. 즉, 고정된
+DINOv2 파운데이션 인코더 위에서 디코더만을 학습하여 시각 표현을 장비--소재
+소스 전반에 상각하고, 배포된 DSCNN을 경쟁자에서 비용이 들지 않는 교사로
+전환하는 의사 라벨 사전학습과 다중 소스 사람 어노테이션 미세조정을
+결합하며, 학습에서 한 번도 보지 못한 장비의 이미지를 포함하는 held-out 사람
+GT 벤치마크와 세그멘테이션 정보원만을 유일한 변경 요소로 하는 하류 인장
+특성 사례 연구로 평가한다. 아울러
+Section~\ref{sec:related-monitoring}에서 지적한 결함 어휘의 판정 기준
+혼재에 대해서는 픽셀 어노테이션의 판정 기준을 통일하기 위한 외형 기준
+분류 체계를 Section~\ref{sec:method-taxonomy}에서 제안한다.

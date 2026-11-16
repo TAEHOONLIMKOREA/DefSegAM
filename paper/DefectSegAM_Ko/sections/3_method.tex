@@ -7,9 +7,9 @@
 
 본 절에서는 레이어 단위 powder bed 결함 세그멘테이션 네트워크인
 DefectSegAM을 기술한다. DefectSegAM은 다음 세 가지 원칙을 중심으로
-설계되었다. (i) 동결된(frozen) 비전 파운데이션 모델 인코더(86\,M
-파라미터)를 경량의 학습 가능한 디코더(14.6\,M 파라미터)와 결합하여,
-이상 탐지 데이터로부터는 디코더만을 학습한다. (ii) 각 적층 레이어의
+설계되었다. (i) 동결된(frozen) 비전 파운데이션 모델 인코더를 경량의
+학습 가능한 디코더와 결합하여, 이상 탐지 데이터로부터는 디코더만을
+학습한다. (ii) 각 적층 레이어의
 용융 직후(post-melting) 뷰와 분말 도포 직후(post-spreading) 뷰를
 융합하는 명시적인 이중 이미지 변화 단서(change cue)를 도입한다.
 (iii) 대규모 pseudo-label(의사 라벨) 사전학습과 소규모 전문가 주석
@@ -28,15 +28,14 @@ DefectSegAM을 기술한다. DefectSegAM은 다음 세 가지 원칙을 중심�
 \includegraphics[width=\linewidth]{Figs/DefectSegAM_Architecture.pdf}
 \caption{DefectSegAM 아키텍처 개요. 각 레이어의 Melt 이미지 $I_0$와
 Powder 이미지 $I_1$은 register token을 포함한 단일 동결 DINOv2
-ViT-B/14 인코더(86\,M 파라미터, 가중치 공유 이중 forward)를 통과한다.
+ViT-B/14 인코더(가중치 공유 이중 forward)를 통과한다.
 트랜스포머 블록 3, 6, 9, 12 이후에서 추출된 특징 맵은 단계별로
 $\left[\mathbf{F}^{(0)}_s;\, \mathbf{F}^{(1)}_s;\,
 \mathbf{F}^{(1)}_s - \mathbf{F}^{(0)}_s\right]$의
 채널 방향 결합(channel-wise concatenation)과 단계별 $1 \times 1$
 projection을 통해 256채널로 융합되고, DPT-style reassemble/top-down
-융합 디코더(헤드를 포함해 14.6\,M 학습 파라미터)로 디코딩되며,
-합성곱 헤드가 산출한 11개 클래스 logit은 bilinear upsampling을 통해
-입력 해상도로 복원된다.}
+융합 디코더로 디코딩되며, 합성곱 헤드가 산출한 11개 클래스 logit은
+bilinear upsampling을 통해 입력 해상도로 복원된다.}
 \label{fig:architecture}
 \end{figure}
 
@@ -77,20 +76,6 @@ ignore index $-1$을 할당하여 손실과 모든 평가 지표에서 제외한
 기준의 혼재, 그리고 이를 정리한 외형 기준 분류 체계는
 \S\ref{sec:method-taxonomy}에서 다룬다.
 
-표~\ref{tab:classes}에는 또한 다섯 개의 ORNL 빌드 B1.1--B1.5
-전체(Stage-1 학습 \emph{및} 검증; \S\ref{sec:setup}의 필터링된 레이어
-집합에 대해 $1036 \times 1036$ 모델 해상도에서 집계)에 대한 재매핑 후
-클래스별 총 픽셀 수를 함께 보고한다. 이 분포는 극단적인
-long-tail 형태를 보인다. 가장 빈번한 클래스(Powder,
-$1.533 \times 10^{10}$ 픽셀)와 가장 희소한 결함 클래스(Recoater
-Hopping, 25 픽셀) 사이의 비율은 거의 아홉 자릿수(nine orders of
-magnitude)에 이르며, 여러 결함 클래스가 추가로 단일 빌드에 집중되어
-있다(예: Over Melting 픽셀의 99.8\,\%와 Under Melting 픽셀의
-99.9\,\%는 빌드 B1.2에서, Super-Elevation 픽셀의 98\,\%는 빌드
-B1.5에서 발생한다). 이러한 불균형이
-\S\ref{sec:method-imbalance}의 샘플링, 증강, 손실 설계의 직접적인
-동기가 된다.
-
 \begin{table}[t]
 \centering
 \caption{DefectSegAM의 11-클래스 온톨로지와 ORNL Peregrine 원본
@@ -99,15 +84,16 @@ B1.5에서 발생한다). 이러한 불균형이
 Melting(11)은 DefectSegAM 식별자 9와 10으로 매핑되며, 유일하게
 무시되는 원본 클래스는 Misprint(9)로서 ignore index $-1$에 매핑되어
 손실과 평가에서 제외된다. 픽셀 수는 다섯 개의 ORNL Co-Registered 빌드
-B1.1--B1.5 전체(\S\ref{sec:setup}의 레이어 필터링을 거친 Stage-1 학습
-및 검증 레이어, $1036 \times 1036$ 모델 해상도)에 대한 재매핑 후
-총계이다. 설명 열은 ORNL 원 정의를 따른 것이며, 같은 결함을 외형
+B1.1--B1.5 전체(\S\ref{sec:setup-stage1-corpus}의 레이어 필터링을
+거친 Stage-1 학습 및 검증 레이어, $1036 \times 1036$ 모델 해상도)에
+대한 재매핑 후 총계이다. 설명 열은 ORNL 원 정의를 따른 것이며, 같은 결함을 외형
 기준으로 다시 정의한 특징은 표~\ref{tab:taxonomy}에 제시한다.}
 \label{tab:classes}
-\small
-\begin{tabular}{clcp{5.6cm}r}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}clc>{\raggedright\arraybackslash}Xr@{}}
 \toprule
-ID & Class & ORNL ID & 설명 & 픽셀 수 (B1.1--B1.5) \\
+ID & Class & \makecell{ORNL\\ID} & 설명 & \makecell{픽셀 수\\(B1.1--B1.5)} \\
 \midrule
 0  & Powder               & 0  & 용융되지 않은 분말 베드 & $1.533 \times 10^{10}$ \\
 1  & Printed              & 1  & 용융(프린팅)된 재료 & $7.05 \times 10^{8}$ \\
@@ -123,8 +109,22 @@ ID & Class & ORNL ID & 설명 & 픽셀 수 (B1.1--B1.5) \\
 \midrule
 $-1$ (무시됨) & Misprint & 9  & 의도된 파트 형상 밖의 프린팅 재료 & --- \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
+
+표~\ref{tab:classes}에는 또한 다섯 개의 ORNL 빌드 B1.1--B1.5
+전체(Stage-1 학습 \emph{및} 검증; \S\ref{sec:setup-stage1-corpus}의
+필터링된 레이어 집합에 대해 $1036 \times 1036$ 모델 해상도에서
+집계)에 대한 재매핑 후 클래스별 총 픽셀 수를 함께 보고한다. 이 분포는 극단적인
+long-tail 형태를 보인다. 가장 빈번한 클래스(Powder,
+$1.533 \times 10^{10}$ 픽셀)와 가장 희소한 결함 클래스(Recoater
+Hopping, 25 픽셀) 사이의 비율은 거의 아홉 자릿수(nine orders of
+magnitude)에 이르며, 여러 결함 클래스가 추가로 단일 빌드에 집중되어
+있다(예: Over Melting 픽셀의 99.8\,\%와 Under Melting 픽셀의
+99.9\,\%는 빌드 B1.2에서, Super-Elevation 픽셀의 98\,\%는 빌드
+B1.5에서, Debris 픽셀의 90\,\%는 빌드 B1.3에서 발생한다). 이러한
+불균형이 \S\ref{sec:method-imbalance}의 샘플링, 증강, 손실 설계의
+직접적인 동기가 된다.
 
 % -------------------------------------------------------------------------
 \subsection{외형 기준 결함 분류 체계(제안; 실험 미적용)}
@@ -133,30 +133,51 @@ $-1$ (무시됨) & Misprint & 9  & 의도된 파트 형상 밖의 프린팅 재�
 표~\ref{tab:classes}의 온톨로지가 물려받은 용어는 판정 기준이 클래스마다
 다르다. Over Melting과 Under Melting은 에너지 밀도라는 원인으로,
 Misprint는 CAD 의도로 정의되는 반면, 나머지 결함도 상당수는 외형과
-원인을 섞어 정의된다. 예컨대 Peregrine v2021-03 릴리스의 정의는
-Swelling과 Super-Elevation을 모두 파트가 분말 베드 위로 솟은 외형으로
-기술하면서, Swelling은 과도한 국소 에너지 입력, Super-Elevation은 분말
-피복 부족 또는 잔류 응력에 의한 뒤틀림의 결과로 원인 절에서만
-구분한다~\cite{Peregrine_v2021_03}. 반면 본 논문 라벨의 출처인 ORNL
-정의(표~\ref{tab:classes})는 두 클래스를 각각 분말 평면 위로 변형된
-프린팅 재료와 프린팅 영역 위의 분말 피복 부족으로 기술하므로, 같은
-클래스라도 릴리스마다 판정 기준이 다르다. 저자들의 관찰로는 두 클래스가
-이미지에서 모두 파트가 분말 위로 솟은 유사한 형상으로 나타나 구별하기
-어렵다. ASTM E3353-22 표준 지침~\cite{ASTME3353}의 공개된 4절도 분말층
-이상을 리코팅 오류와 파트 형성 오류라는 원인 범주로 나눌 뿐, skipping과
-insufficient powder delivery의 레이어 이미지 외형 차이는 제시하지
-않는다(레이어 이미지에서의 상세 기술은 본 연구가 검토하지 못한 8절로
-미룬다). 또한 ORNL 12-클래스 공간과 본 연구가 검토한 사람 주석 코퍼스의
-클래스 목록에는 둘을 나누는 클래스가 없다. 분말 도포 부족은 L-PBF
-소스에서 Incomplete Spreading 하나로만 정의되므로(binder-jet 소스에서는
-같은 정의의 Short Feed)~\cite{ORNL_CoRegistered_Dataset,Peregrine_v2021_03,Peregrine_v2022_10},
-어느 코퍼스도 둘을 구분하여 주석하지 않는다. 픽셀 단위
-주석은 이미지만 보고 수행되므로, 이미지에서 구분할 수 없는 기준은 주석자
-간 불일치와 라벨 노이즈로 이어진다. 분말 베드 이미지의 외형으로 이상을
-검출·분류한다는 접근 자체는 Scime와 Beuth~\cite{Scime2018Anomaly}와
-DSCNN~\cite{Scime2020DSCNN}이 이미 취한 것이지만, 그 클래스 정의는 위와
-같이 원인과 CAD 의도를 포함한다. 본 연구는 그 원칙을 명시적 규칙으로
-확장한다. 즉 데이터셋 정의에 이미 들어 있는 방향 기준(Recoater
+원인을 섞어 정의된다. 예컨대 Peregrine v2021-03과 v2022-10 릴리스의
+정의는 Swelling과 Super-Elevation을 모두 파트가 분말 베드 위로 솟은
+외형(warps up, extends above the powder bed)으로 기술하면서, Swelling은
+과도한 국소 에너지 입력, Super-Elevation은 분말 피복 부족 또는 잔류
+응력에 의한 뒤틀림의 결과로 원인 절에서만
+구분한다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. 반면 본 논문
+라벨의 출처인 ORNL 정의(표~\ref{tab:classes})는 두 클래스를 각각 분말
+평면 위로 변형된 프린팅 재료와 프린팅 영역 위의 분말 피복 부족으로
+기술하므로, 같은 클래스라도 릴리스마다 판정 기준이 다르다. 저자들의
+관찰로는 두 클래스가 이미지에서 모두 파트가 분말 위로 솟은 유사한
+형상으로 나타나 구별하기 어렵다. 반대로 Incomplete Spreading의 정의는
+분말 도포량 부족이라는 원인만 규정하므로, 얕은 미도포 자국과 분말이
+무너져 내린 형상처럼 외형이 크게 다를 수 있는 이상이 한 용어에 포함될
+수 있다. 픽셀 단위 주석은 이미지만 보고 수행되므로, 이미지에서 구분할
+수 없는 기준은 주석자 간 불일치와 라벨 노이즈로 이어진다.
+
+ASTM E3353-22 표준 지침~\cite{ASTME3353}의 공개된 4절(Significance and
+Use)은 L-PBF의 광학·열 in-process 모니터링으로 검출할 분말층 이상의
+원인을 리코팅 오류(skipping, scraping, insufficient powder delivery,
+part strike)와 파트 형성 오류(distortion, humping, balling,
+superelevation)로 범주화하고, 레이어 이미지에서의 상세 기술은 본 연구가
+검토하지 못한 8절(Layer Imaging)로 미룬다. 같은 4절은
+과열(overheating)·overmelting 항목을 따로 두어 그 징후로 과열 영역의
+변색(scorching)과 humping 등의 표면 변화를 들고, 과도한 spatter/ejecta를
+그 하위 항목으로 기술한다. 이를 DSCNN--Peregrine 어휘와 대응시키면
+skipping과 insufficient powder delivery는 모두 Incomplete Spreading에,
+scraping은 Recoater Streaking에, part strike는 Recoater Hopping에
+대응한다. Distortion, humping, superelevation은 Swelling 또는
+Super-Elevation에(humping의 대응은 잠정적이다; 아래 참조), overmelting은
+Over Melting에, spatter/ejecta는 Spatter에 대응하며, balling에는 L-PBF
+클래스 공간에 대응 클래스가 없다(Peregrine v2021-03의 전자빔 PBF
+소스에만 Balling 클래스가 정의되어 있다~\cite{Peregrine_v2021_03}). 이
+범주는 원인 기준이며, 본 연구가 검토한 공개부는 skipping과 insufficient
+powder delivery의 레이어 이미지 외형 차이를 제시하지 않는다. 또한 ORNL
+12-클래스 공간과 본 연구가 검토한 사람 주석 코퍼스의 클래스 목록에는
+둘을 나누는 클래스가 없다. 분말 도포 부족은 L-PBF 소스에서 Incomplete
+Spreading 하나로만 정의되므로(binder-jet 소스에서는 같은 정의의 Short
+Feed)~\cite{ORNL_CoRegistered_Dataset,Peregrine_v2021_03,Peregrine_v2022_10},
+어느 코퍼스도 둘을 구분하여 주석하지 않는다.
+
+분말 베드 이미지의 외형으로 이상을 검출·분류한다는 접근 자체는 Scime와
+Beuth~\cite{Scime2018Anomaly}와 DSCNN~\cite{Scime2020DSCNN}이 이미 취한
+것이지만, 그 클래스 정의는 위와 같이 원인과 CAD 의도를 포함한다. 본
+연구는 그 원칙을 명시적 규칙으로 확장한다. 즉 데이터셋 정의에 이미 들어
+있는 방향 기준(Recoater
 Hopping과 Recoater Streaking을 리코팅 방향에 수직·평행한 줄무늬로
 정의~\cite{Peregrine_v2021_03,Peregrine_v2022_10})과 영역 기준(ORNL의
 Spatter 정의, v2022-10 릴리스의 ``Spatter on
@@ -171,9 +192,181 @@ Melting을 외형 기준으로 재정의하여 유지할 경우 결함 아홉 �
 아래 (v) 참조), 각 클래스가 관찰되는 이미지(도포 직후의 Powder 이미지
 $I_1$, 용융 직후의 Melt 이미지 $I_0$, 또는 둘 다), 이미지에 나타난
 특징, 그리고 ORNL 12-클래스 공간 및 ASTM E3353-22 어휘와의 대응을
-표~\ref{tab:taxonomy}에 정리하였다. 이미지 열은 저자들의 관찰에 따른
-것이다. \TODO{이미지 열의 관찰 근거(검토한 소스·레이어 수)를 명시할
-것.}
+표~\ref{tab:taxonomy}에 정리하였다.
+
+표~\ref{tab:taxonomy}의 이미지 열은 저자들의 관찰에 따른 것으로(Powder
+Collapse는 두 코퍼스에 라벨된 사례가 없어 신규 주석 시 확인이
+필요하다), \S\ref{sec:method-problem}의 개략적 구분과는
+Swelling/Super-Elevation(둘 다 $\rightarrow$ $I_1$)과 Recoater
+Streaking, Recoater Hopping, Debris($I_1$ $\rightarrow$ 둘 다)에서
+차이가 있다. 특징 열에는 시각 특징만 적었으며, 통상적 원인은 판정
+기준이 아니다. ASTM 열의 괄호 안 영역 구분은 표준이 아니라 본 체계의
+판별 규칙에 따른 것이다. 배경 행의 이미지 열 ``---''는 결함이
+아니므로 구분이 해당 없음을, 그 밖의 ``---''는 대응 용어가 없음을
+뜻한다. Swelling과 Super-Elevation을 통합한 클래스는 11-클래스
+온톨로지의 Super-Elevation과 구별하기 위해 하이픈 없이 Super
+Elevation으로 표기하고, ASTM 열의 Superelevation은 표준 원문의
+철자이다. 표준의 공개된 4절은 humping을 파트 형성 오류로 들면서
+과열의 징후로도 들므로, Humping의 Super Elevation 대응은 트랙 융기의
+레이어 이미지 외형을 확인하기 전까지 잠정적이다. Over Melting의 ORNL
+라벨 재매핑에는 재검토가 필요하다(아래 참조).
+\TODO{이미지 열의 관찰 근거(검토한 소스·레이어 수)를 명시할 것.}
+
+\begin{table}[tp]
+\centering
+\caption{제안하는(본 논문의 실험에는 사용하지 않은) 외형 기준 결함 분류
+체계(결함 8종 + 배경 2종)와 기존 어휘의 대응. 이미지 열은 결함이
+나타나는 이미지($I_1$ = Powder 이미지, $I_0$ = Melt 이미지, 둘 다 = 두
+이미지 모두), ORNL 열은 표~\ref{tab:classes}의 원본 12-클래스 식별자,
+ASTM 열은 ASTM E3353-22~\cite{ASTME3353}의 이상 용어를 저자들이
+대응시킨 것이다.}
+\label{tab:taxonomy}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.1cm}c>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.5cm}@{}}
+\toprule
+클래스 & 이미지 & 이미지에 나타난 특징 & ORNL 12-클래스 & ASTM E3353-22 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{배경}} \\
+Powder  & --- & 결함도 파트도 없는 분말 베드 & Powder (0) & --- \\
+Printed & --- & 결함이 없는 프린팅 영역 & Printed (1) & --- \\
+\multicolumn{5}{@{}l}{\emph{결함}} \\
+Incomplete Spreading & $I_1$ & 분말 영역에 남는 얕고 미세한 미도포 자국 & Incomplete Spreading (4) & Skipping; Insufficient powder delivery \\
+Powder Collapse      & 둘 다 & 분말이 산사태처럼 무너져 내린 큰 형상 & --- (신규) & Skipping; Insufficient powder delivery \\
+Recoater Streaking   & 둘 다 & 리코팅 방향과 평행한 줄무늬 & Recoater Streaking (3) & Scraping \\
+Recoater Hopping     & 둘 다 & 리코팅 방향과 수직인 반복 줄무늬 & Recoater Hopping (2) & Part strike \\
+Super Elevation      & $I_1$ & 파트가 분말 위로 돌출된 형상 & Swelling (5); Super-Elevation (7) & Distortion; Superelevation; Humping (잠정) \\
+Spatter              & $I_0$ & 분말 영역에 재가 날린 것처럼 보이는 거뭇한 영역 & Spatter (8) & Excessive spatter/ejecta (분말 영역) \\
+Over Melting         & $I_0$ & 파트 영역 위에 거뭇하게 재가 보이는 영역 & Over Melting (10; 재검토) & Overheating\slash Overmelting; Excessive spatter/ejecta (파트 영역) \\
+Debris               & 둘 다 & 분말 면에 포착된 불규칙한 덩어리나 조각 & Debris (6) & --- \\
+\midrule
+(제외) & --- & CAD 의도 기준 클래스 & Misprint (9) & --- \\
+(미결) & --- & 공정 파라미터 기준 클래스; 처리 미결(본문 참조) & Under Melting (11) & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+11-클래스 온톨로지와 비교하면 제안 체계의 변경은 다섯 가지이다. (i)
+Swelling과 Super-Elevation은 모두 파트가 분말 위로 솟은 유사한
+형상이어서 이미지만으로 구별하기 어려우므로 하나의 Super
+Elevation(11-클래스의 Super-Elevation과 구별하기 위해 하이픈 없이
+표기한 통합 클래스)으로 통합한다. 면적 기준으로 파트 가장자리의 소규모
+융기(Edge Swelling)를 하위 클래스로 분리하는 방안은 임계값을 정한 뒤
+검토한다. (ii) 제안 체계는 Spatter와 Over Melting을 모두 거뭇한
+영역이라는 외형으로 정의하고(저자들의 관찰로는 두 결함이 유사하게
+거뭇하게 나타난다) 위치로만 구분하여, 파트 마스크를 기준으로 분말
+영역의 거뭇한 픽셀은 Spatter, 파트 영역의 거뭇한 픽셀은 Over Melting으로
+판정한다. 두 클래스를 하나로 합치고 파트 마스크로 후처리 분할하는
+대안도 가능하지만, 파트 마스크가 없는 소스(아래 둘째 규칙의 한계)와
+실시간 배포에서는 모델이 Printed 영역을 이미지에서 직접 추론해야 하므로
+두 클래스를 유지한다. 따라서 두 클래스의 라벨 정의는 파트 마스크에
+의존하며, 모델은 파트 영역과 분말 영역의 구분을 이미지에서 학습해야
+한다.
+(iii) 분말이 무너져 내린 형상은 Incomplete Spreading과 원인(분말
+부족)이 일부 겹칠 수 있으나(저자들은 빌드플레이트 패드 마모도 원인으로
+추정한다) 이미지 특징이 크게 다르므로 Powder Collapse를 신설한다. (iv)
+Misprint는 CAD 의도 기준 클래스이므로 계속 제외한다. 제안 체계도 파트
+마스크를 사용하지만, Misprint는 CAD 의도 자체가 판정 기준인 반면 파트
+마스크는 위치 정보로만 쓰인다. (v) Under Melting은 저에너지
+밀도라는 공정 파라미터로 정의되어 외형 기준 원칙에 어긋난다. Over
+Melting을 파트 영역 위의 거뭇한 영역이라는 외형으로 재정의한 것과 달리
+Under Melting은 재정의하지 않았다. B1.2에서의 높은 일치도 IoU(0.8643;
+\S\ref{sec:results-agreement})는 teacher와 student가 레이어 이미지의
+같은 패턴을 이 클래스로 표시함을 뜻하므로 외형 기준 재정의가 가능할 수
+있음을 시사하지만, 이는 teacher와의 일치도일 뿐 외형 서명의 존재를 직접
+입증하지 않으며(\S\ref{sec:discussion-validity}), 해당 픽셀의
+99.9\,\%가 단일 빌드 B1.2에 집중되어 있어 이미지 서명이 그 빌드의 공정
+조건과 교락(confounding)되어 있으므로, 주석자가 적용할 수 있는 외형
+판정 기준은 아직 정의되지 않았다. ORNL 코퍼스에서 약 $2.8 \times
+10^{7}$ 픽셀을 차지하고 본 연구의 11-클래스 온톨로지가 이를 유지하므로,
+제안 체계에서의 처리(제외, 또는 외형 기준 재정의와 그 판정 기준)는 향후
+과제로 남긴다.
+\TODO{제안 체계에서 Under Melting의 처리(ignore 또는 외형 기준 재정의)를
+확정할 것; native 클래스 ``Localized Dark Regions''의 Under Melting
+매핑(\S\ref{sec:setup-stage2-corpus})도 함께 결정할 것.}
+
+외형이 비슷한 쌍에는 다음 판별 규칙을 둔다. 첫째, Recoater Streaking과
+Recoater Hopping은 줄무늬 방향으로 구분한다. 리코팅 방향과 평행하면
+Streaking, 수직이면 Hopping이며, 이 구분은 Peregrine 릴리스의 클래스
+정의를 따른 것이다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. 이
+규칙에는 리코팅 방향 메타데이터가 필요하다. Peregrine v2022-10
+릴리스~\cite{Peregrine_v2022_10}의 소스 정보 파일과 ORNL Co-Registered
+HDF5~\cite{ORNL_CoRegistered_Dataset}의
+빌드 메타데이터(\texttt{printer/recoating\_direction}; 다섯 빌드 모두
+$-x$)는 리코팅 방향을 기록하므로 이 규칙은 두 코퍼스에 적용할 수 있고,
+v2021-03 릴리스~\cite{Peregrine_v2021_03}에는 해당 메타데이터가 없다.
+같은 이유로 $90^{\circ}$ 회전은 줄무늬 방향의 의미를 바꾸므로 증강에 쓸
+수 없으며, \S\ref{sec:method-inference}의 기하 증강이 flip과
+$180^{\circ}$ 회전만 사용하는 것은 이와 부합한다. 둘째, Spatter와 Over
+Melting은 파트 마스크로 구분한다. ORNL 데이터셋은 모든 레이어에 파트
+식별자 마스크(\texttt{slices/part\_ids})를 제공하므로 이 규칙을 전
+레이어에 적용할 수 있다. 반면 Peregrine v2022-10 릴리스의 파트 마스크는
+파트 형상 정보가 없는 레이어에서 빈 마스크로 제공된다. 여섯 소스의 학습
+분할에 공개된 파트 마스크 88장 중 61장이 빈 마스크이며(17-4~PH와
+Inconel~718의 둘째 구성은 전부, maraging steel 소스는 26장 중 15장,
+H13은 7장 중 6장, Inconel~718의 첫째 구성은 5장 중 2장), 주석이 있는
+85개 레이어(\S\ref{sec:setup-stage2-corpus})로 한정해도 61개로
+같다. v2021-03 릴리스에는 파트 마스크가 없다. 따라서 사람 주석
+코퍼스에서는 이 규칙을 GammaPrint-700 등 파트 마스크가 있는 일부
+레이어에만 자동 적용할 수 있고, 나머지 레이어에서는 주석자가 Printed
+영역을 직접 판정해야 한다.
+셋째,
+Incomplete Spreading과 Super Elevation은 둘 다 Powder 이미지에서 분말로
+덮이지 않은 형태로 나타나지만, 파트 마스크 안에서 금속 표면이 밝게
+드러나면 Super Elevation, 분말 영역에 얕게 덮이다 만 자국이면 Incomplete
+Spreading으로 판정한다. 넷째, Incomplete Spreading과 Powder Collapse는
+규모와 형상으로 구분한다. 전자는 얕고 미세하며 Powder 이미지에서만
+보이지만, 후자는 분말이 무너져 내린 큰 형상이며 용융 뒤에도 남아 Melt
+이미지에서도 보일 것으로 예상된다(신규 주석 시 확인한다). 이
+규칙들에는 다음 한계가 있다. 첫째 규칙은 리코팅
+방향 메타데이터가 없는 v2021-03 소스에는 적용할 수 없다. 둘째와 셋째
+규칙은 CAD 파트 마스크에 의존하지만, 실제 프린팅 영역은 CAD 형상과
+어긋날 수 있고---Misprint와 Super Elevation이 존재하는 이유이기도
+하다---마스크 경계에 걸친 픽셀의 처리 규칙이 아직 없다. 또한 둘째와
+셋째 규칙은 모두 현재 사람 주석 코퍼스의 대부분 레이어에 자동 적용할 수
+없으므로, 마스크가 없거나 빈 레이어에서는 두 규칙 모두 주석자가 파트
+영역을 직접 판정해야 한다. 넷째 규칙의
+규모 기준에는 정량 임계값이 없다. 이 규칙들이 주석자 간 불일치를 실제로
+줄이는지는 측정되지 않았으므로, 재주석 시 복수 주석자의 클래스별
+일치도로 검증해야 한다.
+
+제안 체계를 적용하려면 기존 라벨의 재매핑과 일부 신규 주석이 필요하다.
+표~\ref{tab:taxonomy}의 대응에 따라 Powder, Printed, Incomplete
+Spreading, Recoater Streaking, Recoater Hopping, Debris는 기존 ORNL 의사
+라벨과 사람 주석을 그대로 재매핑할 수 있고(다만 Incomplete Spreading
+라벨에 Powder Collapse 형상이 섞여 있는지, 그리고 원 정의상
+포괄(catch-all) 클래스인 Debris 라벨이 새 정의(불규칙한 덩어리·조각)를
+만족하는지는 재검토가 필요하다), Super
+Elevation은 Swelling과 Super-Elevation 라벨의 합집합으로 얻는다. 반면
+Spatter와 Over Melting은 기존 라벨을 파트 마스크로 다시 나누어야
+하며(ORNL 코퍼스는 \texttt{slices/part\_ids}로 가능하다), ORNL의 Over
+Melting은 고에너지 밀도 공정 파라미터라는 원인으로 정의된 클래스이고 그
+픽셀이 거의 전부 B1.2에 집중되어 있으므로(\S\ref{sec:method-problem}),
+파트 영역 위의 거뭇한 외형이라는 새 정의를 만족하는지 레이어별 재검토가
+필요하다. Debris는
+ORNL 코퍼스에 약 $1.8 \times 10^{6}$ 픽셀, 사람 주석 코퍼스의 여덟 개
+소스 중 다섯 개에 존재한다. Powder Collapse에 해당하는 라벨은 ORNL
+코퍼스와 사람 주석 코퍼스 어디에도 없어 신규 주석이 필요하다. Recoater
+Hopping은 ORNL 코퍼스에 25픽셀뿐이고 사람 주석은 롤러형 리코터를 쓰는
+maraging steel 소스에만 있는데, 이 소스의 정의는 ``롤러가 분말 표면에
+만드는 물결 모양 세로선''으로 리코터 블레이드와 파트의 접촉을 전제하는
+다른 소스의 정의와 원인이 다르므로~\cite{Peregrine_v2022_10},
+외형(리코팅 방향과 수직인 반복 줄무늬)이 일치하는지 확인한 뒤
+재매핑해야 한다. 한편 \S\ref{sec:setup-stage2-corpus}에서 ignore
+index로 흡수되는 native 클래스 ``Soot''(확산된 어두운 영역)는 파트
+마스크로 나누면 Spatter와 Over Melting의 사람 주석으로 재활용할 수
+있다(마스크 경계 오차는 감수해야 한다). 그러나
+Soot 클래스가 정의된 네 소스 중 v2021-03 L-PBF 소스에는 파트 마스크가
+없고, v2022-10의 17-4~PH는 공개된 파트 마스크가 모두 빈
+마스크이며(Inconel~718 둘째 구성은 Soot 클래스를 정의하지만 주석 픽셀이
+없다), maraging steel 소스도 26개 레이어 중 15개가 빈 마스크이다.
+따라서 실제로 분할 가능한 양은 Soot 주석과 비어 있지 않은 파트 마스크가
+함께 있는 maraging steel 9개 레이어의 약 $5.3 \times 10^{5}$ 픽셀(파트
+안 약 $6.5 \times 10^{4}$, 밖 약 $4.7 \times 10^{5}$)로, 전체 Soot
+주석(약 $5.7 \times 10^{6}$ 픽셀)의 약 9\,\%에 그친다. 채택 여부는
+미정이다.
+\TODO{Powder Collapse 주석 레이어(ORNL B1.5 우선)를 확보하고, Soot 분할
+채택 여부를 확정할 것.}
 
 제안 체계의 결함 클래스 여덟 종의 예시 사진을 여덟 장의 그림에 나누어
 보인다. 각 패널 아래에는 클래스명과 원자료의 빌드·레이어 표기를
@@ -249,57 +442,13 @@ Debris와 Super Elevation을 구별하기 어려웠으며, 이는 제안 체계�
 규칙이 지닌 한계를 보여 주는 사례이다. (b)와 (c)는 같은 빌드의 레이어
 86과 88로, 제자리에서 밀려나 분말 면에 놓인 파트 조각이 각각 두 곳
 보인다. (c)의 위쪽에는 리코터가 보이며, 저자들의 관찰로는 밀려난
-조각이 끝내 리코터에 걸렸다. 이 체계는 차기 주석과 학습을 위한
-제안이며, 본 논문의 모든 학습과 평가는 표~\ref{tab:classes}의 11-클래스
-온톨로지로 수행되었다.
+조각이 끝내 리코터에 걸렸다. 이 체계가 본 논문의 11-클래스 결과에 갖는
+함의는 \S\ref{sec:discussion-taxonomy}에서 논의한다.
 
-\begin{table}[t]
-\centering
-\caption{제안하는(본 논문의 실험에는 사용하지 않은) 외형 기준 결함 분류
-체계(결함 8종 + 배경 2종)와 기존 어휘의 대응. 이미지 열은 결함이 나타나는
-이미지를 뜻한다($I_1$ = 분말 도포 직후의 Powder 이미지, $I_0$ = 용융
-직후의 Melt 이미지, 둘 다 = 두 이미지 모두). ORNL 열은
-표~\ref{tab:classes}의 원본 12-클래스 식별자이고, ASTM 열은 ASTM
-E3353-22~\cite{ASTME3353}의 이상 용어를 저자들이 대응시킨 것이며, 괄호
-안의 영역 구분은 표준이 아니라 본 체계의 판별 규칙에 따른 것이다.}
-\label{tab:taxonomy}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.3cm}c>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.7cm}@{}}
-\toprule
-클래스 & 이미지 & 이미지에 나타난 특징 & ORNL 12-클래스 & ASTM E3353-22 \\
-\midrule
-\multicolumn{5}{@{}l}{\emph{배경}} \\
-Powder  & --- & 결함도 파트도 없는 분말 베드 & Powder (0) & --- \\
-Printed & --- & 결함이 없는 프린팅 영역 & Printed (1) & --- \\
-\multicolumn{5}{@{}l}{\emph{결함}} \\
-Incomplete Spreading & $I_1$ & 분말 영역에 남는 얕고 미세한 미도포 자국 & Incomplete Spreading (4) & Skipping; Insufficient powder delivery \\
-Powder Collapse      & 둘 다 & 분말이 산사태처럼 무너져 내린 큰 형상 & --- (신규) & Skipping; Insufficient powder delivery \\
-Recoater Streaking   & 둘 다 & 리코팅 방향과 평행한 줄무늬 & Recoater Streaking (3) & Scraping \\
-Recoater Hopping     & 둘 다 & 리코팅 방향과 수직인 반복 줄무늬 & Recoater Hopping (2) & Part strike \\
-Super Elevation      & $I_1$ & 파트가 분말 위로 돌출된 형상 & Swelling (5); Super-Elevation (7) & Distortion; Superelevation; Humping (잠정) \\
-Spatter              & $I_0$ & 분말 영역에 재가 날린 것처럼 보이는 거뭇한 영역 & Spatter (8) & Excessive spatter/ejecta (분말 영역) \\
-Over Melting         & $I_0$ & 파트 영역 위에 거뭇하게 재가 보이는 영역 & Over Melting (10; 재검토) & Overheating\slash Overmelting; Excessive spatter/ejecta (파트 영역) \\
-Debris               & 둘 다 & 분말 면에 포착된 불규칙한 덩어리나 조각 & Debris (6) & --- \\
-\midrule
-(제외) & --- & CAD 의도 기준 클래스 & Misprint (9) & --- \\
-(미결) & --- & 공정 파라미터 기준 클래스; 처리 미결(본문 참조) & Under Melting (11) & --- \\
-\bottomrule
-\multicolumn{5}{@{}p{\textwidth}@{}}{\footnotesize 이미지 열은 저자들의 관찰에 따른 것으로(Powder
-Collapse는 두 코퍼스에 라벨된 사례가 없어 신규 주석 시 확인이 필요하다),
-\S\ref{sec:method-problem}의 개략적 구분과는 Swelling/Super-Elevation(둘 다 $\rightarrow$ $I_1$)과
-Recoater Streaking, Recoater Hopping, Debris($I_1$ $\rightarrow$ 둘 다)에서 차이가 있다.
-특징 열에는 시각 특징만 적었으며, 통상적 원인은 판정 기준이 아니다.
-배경 행의 이미지 열 ``---''는 결함이 아니므로 구분이 해당 없음을, 그 밖의 ``---''는 대응 용어가
-없음을 뜻한다.
-Swelling과 Super-Elevation을 통합한 클래스는 11-클래스 온톨로지의 Super-Elevation과 구별하기
-위해 하이픈 없이 Super Elevation으로 표기하고, ASTM 열의 Superelevation은 표준 원문의 철자이다.
-표준의 공개된 4절은 humping을 파트 형성 오류로 들면서 과열의 징후로도 들므로, Humping의
-Super Elevation 대응은 트랙 융기의 레이어 이미지 외형을 확인하기 전까지 잠정적이다.
-Over Melting의 ORNL 라벨 재매핑에는 재검토가 필요하다(본문 참조).}
-\end{tabularx}
-\end{table}
-
+% Example-photo figures of §3.2 ([p] floats). Kept together here, after the
+% last body paragraph of the subsection, and flushed with \clearpage so that
+% they come out as consecutive full pages before §3.3 instead of interleaving
+% with the body text.
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth,height=0.80\textheight,keepaspectratio]{Figs/Defect_Examples_IS_RH.pdf}
@@ -385,124 +534,7 @@ Elevation(SE)이다. 표시 방식과 사진 처리는
 \label{fig:examples-db}
 \end{figure}
 
-11-클래스 온톨로지와 비교하면 제안 체계의 변경은 다섯 가지이다. (i)
-Swelling과 Super-Elevation은 모두 파트가 분말 위로 솟은 유사한
-형상이어서 이미지만으로 구별하기 어려우므로 하나의 Super
-Elevation(11-클래스의 Super-Elevation과 구별하기 위해 하이픈 없이
-표기한 통합 클래스)으로 통합한다. 면적 기준으로 파트 가장자리의 소규모
-융기(Edge Swelling)를 하위 클래스로 분리하는 방안은 임계값을 정한 뒤
-검토한다. (ii) 제안 체계는 Spatter와 Over Melting을 모두 거뭇한
-영역이라는 외형으로 정의하고(저자들의 관찰로는 두 결함이 유사하게
-거뭇하게 나타난다) 위치로만 구분하여, 파트 마스크를 기준으로 분말
-영역의 거뭇한 픽셀은 Spatter, 파트 영역의 거뭇한 픽셀은 Over Melting으로
-판정한다. 두 클래스를 하나로 합치고 파트 마스크로 후처리 분할하는
-대안도 가능하지만, 파트 마스크가 없는 소스(아래 둘째 규칙의 한계)와
-실시간 배포에서는 모델이 Printed 영역을 이미지에서 직접 추론해야 하므로
-두 클래스를 유지한다. 따라서 두 클래스의 라벨 정의는 파트 마스크에
-의존하며, 모델은 파트 영역과 분말 영역의 구분을 이미지에서 학습해야
-한다.
-(iii) 분말이 무너져 내린 형상은 Incomplete Spreading과 원인(분말
-부족)이 일부 겹칠 수 있으나(저자들은 빌드플레이트 패드 마모도 원인으로
-추정한다) 이미지 특징이 크게 다르므로 Powder Collapse를 신설한다. (iv)
-Misprint는 CAD 의도 기준 클래스이므로 계속 제외한다. 제안 체계도 파트
-마스크를 사용하지만, Misprint는 CAD 의도 자체가 판정 기준인 반면 파트
-마스크는 위치 정보로만 쓰인다. (v) Under Melting은 저에너지
-밀도라는 공정 파라미터로 정의되어 외형 기준 원칙에 어긋난다. Over
-Melting을 파트 영역 위의 거뭇한 영역이라는 외형으로 재정의한 것과 달리
-Under Melting은 재정의하지 않았다. B1.2에서의 높은 일치도 IoU(0.8643;
-\S\ref{sec:results-agreement})는 teacher와 student가 레이어 이미지의
-같은 패턴을 이 클래스로 표시함을 뜻하므로 외형 기준 재정의가 가능할 수
-있음을 시사하지만, 이는 teacher와의 일치도일 뿐 외형 서명의 존재를 직접
-입증하지 않으며(\S\ref{sec:discussion-validity}), 해당 픽셀의
-99.9\,\%가 단일 빌드 B1.2에 집중되어 있어 이미지 서명이 그 빌드의 공정
-조건과 교락(confounding)되어 있으므로, 주석자가 적용할 수 있는 외형
-판정 기준은 아직 정의되지 않았다. ORNL 코퍼스에서 약 $2.8 \times
-10^{7}$ 픽셀을 차지하고 본 연구의 11-클래스 온톨로지가 이를 유지하므로,
-제안 체계에서의 처리(제외, 또는 외형 기준 재정의와 그 판정 기준)는 향후
-과제로 남긴다.
-\TODO{제안 체계에서 Under Melting의 처리(ignore 또는 외형 기준 재정의)를
-확정할 것; native 클래스 ``Localized Dark Regions''의 Under Melting
-매핑(\S\ref{sec:setup})도 함께 결정할 것.}
-
-외형이 비슷한 쌍에는 다음 판별 규칙을 둔다. 첫째, Recoater Streaking과
-Recoater Hopping은 줄무늬 방향으로 구분한다. 리코팅 방향과 평행하면
-Streaking, 수직이면 Hopping이며, 이 구분은 Peregrine 릴리스의 클래스
-정의를 따른 것이다~\cite{Peregrine_v2021_03,Peregrine_v2022_10}. 이
-규칙에는 리코팅 방향 메타데이터가 필요하다. Peregrine v2022-10
-릴리스~\cite{Peregrine_v2022_10}의 소스 정보 파일과 ORNL Co-Registered
-HDF5~\cite{ORNL_CoRegistered_Dataset}의
-빌드 메타데이터(\texttt{printer/recoating\_direction}; 다섯 빌드 모두
-$-x$)는 리코팅 방향을 기록하므로 이 규칙은 두 코퍼스에 적용할 수 있고,
-v2021-03 릴리스~\cite{Peregrine_v2021_03}에는 해당 메타데이터가 없다.
-같은 이유로 $90^{\circ}$ 회전은 줄무늬 방향의 의미를 바꾸므로 증강에 쓸
-수 없으며, \S\ref{sec:method-inference}의 기하 증강이 flip과
-$180^{\circ}$ 회전만 사용하는 것은 이와 부합한다. 둘째, Spatter와 Over
-Melting은 파트 마스크로 구분한다. ORNL 데이터셋은 모든 레이어에 파트
-식별자 마스크(\texttt{slices/part\_ids})를 제공하므로 이 규칙을 전
-레이어에 적용할 수 있다. 반면 Peregrine v2022-10 릴리스의 파트 마스크는
-파트 형상 정보가 없는 레이어에서 빈 마스크로 제공된다. 여섯 소스의 학습
-분할에 공개된 파트 마스크 88장 중 61장이 빈 마스크이며(17-4~PH와
-Inconel~718의 둘째 구성은 전부, maraging steel 소스는 26장 중 15장,
-H13은 7장 중 6장, Inconel~718의 첫째 구성은 5장 중 2장), 주석이 있는
-85개 레이어(표~\ref{tab:datasets})로 한정해도 61개로 같다. v2021-03
-릴리스에는 파트 마스크가 없다. 따라서 사람 주석 코퍼스에서는 이 규칙을
-GammaPrint-700 등 파트 마스크가 있는 일부 레이어에만 자동 적용할 수
-있고, 나머지 레이어에서는 주석자가 Printed 영역을 직접 판정해야 한다.
-셋째,
-Incomplete Spreading과 Super Elevation은 둘 다 Powder 이미지에서 분말로
-덮이지 않은 형태로 나타나지만, 파트 마스크 안에서 금속 표면이 밝게
-드러나면 Super Elevation, 분말 영역에 얕게 덮이다 만 자국이면 Incomplete
-Spreading으로 판정한다. 넷째, Incomplete Spreading과 Powder Collapse는
-규모와 형상으로 구분한다. 전자는 얕고 미세하며 Powder 이미지에서만
-보이지만, 후자는 분말이 무너져 내린 큰 형상이며 용융 뒤에도 남아 Melt
-이미지에서도 보일 것으로 예상된다(표~\ref{tab:taxonomy} 각주; 신규 주석
-시 확인한다). 이 규칙들에는 다음 한계가 있다. 첫째 규칙은 리코팅
-방향 메타데이터가 없는 v2021-03 소스에는 적용할 수 없다. 둘째와 셋째
-규칙은 CAD 파트 마스크에 의존하지만, 실제 프린팅 영역은 CAD 형상과
-어긋날 수 있고---Misprint와 Super Elevation이 존재하는 이유이기도
-하다---마스크 경계에 걸친 픽셀의 처리 규칙이 아직 없다. 또한 둘째와
-셋째 규칙은 모두 현재 사람 주석 코퍼스의 대부분 레이어에 자동 적용할 수
-없으므로, 마스크가 없거나 빈 레이어에서는 두 규칙 모두 주석자가 파트
-영역을 직접 판정해야 한다. 넷째 규칙의
-규모 기준에는 정량 임계값이 없다. 이 규칙들이 주석자 간 불일치를 실제로
-줄이는지는 측정되지 않았으므로, 재주석 시 복수 주석자의 클래스별
-일치도로 검증해야 한다.
-
-제안 체계를 적용하려면 기존 라벨의 재매핑과 일부 신규 주석이 필요하다.
-표~\ref{tab:taxonomy}의 대응에 따라 Powder, Printed, Incomplete
-Spreading, Recoater Streaking, Recoater Hopping, Debris는 기존 ORNL 의사
-라벨과 사람 주석을 그대로 재매핑할 수 있고(다만 Incomplete Spreading
-라벨에 Powder Collapse 형상이 섞여 있는지, 그리고 원 정의상
-포괄(catch-all) 클래스인 Debris 라벨이 새 정의(불규칙한 덩어리·조각)를
-만족하는지는 재검토가 필요하다), Super
-Elevation은 Swelling과 Super-Elevation 라벨의 합집합으로 얻는다. 반면
-Spatter와 Over Melting은 기존 라벨을 파트 마스크로 다시 나누어야
-하며(ORNL 코퍼스는 \texttt{slices/part\_ids}로 가능하다), ORNL의 Over
-Melting은 고에너지 밀도 공정 파라미터라는 원인으로 정의된 클래스이고 그
-픽셀의 99.8\,\%가 B1.2에 집중되어 있으므로, 파트 영역 위의 거뭇한
-외형이라는 새 정의를 만족하는지 레이어별 재검토가 필요하다. Debris는
-ORNL 코퍼스에 약 $1.8 \times 10^{6}$ 픽셀, 사람 주석 코퍼스의 여덟 개
-소스 중 다섯 개에 존재한다. Powder Collapse에 해당하는 라벨은 ORNL
-코퍼스와 사람 주석 코퍼스 어디에도 없어 신규 주석이 필요하다. Recoater
-Hopping은 ORNL 코퍼스에 25픽셀뿐이고 사람 주석은 롤러형 리코터를 쓰는
-maraging steel 소스에만 있는데, 이 소스의 정의는 ``롤러가 분말 표면에
-만드는 물결 모양 세로선''으로 리코터 블레이드와 파트의 접촉을 전제하는
-다른 소스의 정의와 원인이 다르므로~\cite{Peregrine_v2022_10},
-외형(리코팅 방향과 수직인 반복 줄무늬)이 일치하는지 확인한 뒤
-재매핑해야 한다. 한편 \S\ref{sec:method-training}에서 ignore index로
-흡수되는 native 클래스 ``Soot''(확산된 어두운 영역)는 파트 마스크로
-나누면 Spatter와 Over Melting의 사람 주석으로 재활용할 수 있다. 그러나
-Soot 클래스가 정의된 네 소스 중 v2021-03 L-PBF 소스에는 파트 마스크가
-없고, v2022-10의 17-4~PH는 공개된 파트 마스크가 모두 빈
-마스크이며(Inconel~718 둘째 구성은 Soot 클래스를 정의하지만 주석 픽셀이
-없다), maraging steel 소스도 26개 레이어 중 15개가 빈 마스크이다.
-따라서 실제로 분할 가능한 양은 Soot 주석과 비어 있지 않은 파트 마스크가
-함께 있는 maraging steel 9개 레이어의 약 $5.3 \times 10^{5}$ 픽셀(파트
-안 약 $6.5 \times 10^{4}$, 밖 약 $4.7 \times 10^{5}$)로, 전체 Soot
-주석(약 $5.7 \times 10^{6}$ 픽셀)의 약 9\,\%에 그친다. 채택 여부는
-미정이다.
-\TODO{Powder Collapse 주석 레이어(ORNL B1.5 우선)를 확보하고, Soot 분할
-채택 여부를 확정할 것.}
+\clearpage
 
 % -------------------------------------------------------------------------
 \subsection{아키텍처}
@@ -521,22 +553,22 @@ $14$-픽셀 패치의 $74 \times 74$ 격자로 정확히 타일링되도록 한�
 가장 가까운 배수로 내림(floor)된다.
 
 \paragraph{동결된 파운데이션 모델 인코더}
-인코더 $E_{\theta}$는 12개의 트랜스포머 블록, 768의 임베딩 차원, 약
-86\,M개의 파라미터를 갖는 DINOv2 ViT-B/14 비전 트랜스포머~\cite{Oquab2024DINOv2,Dosovitskiy2021ViT}이며, dense prediction에서
+인코더 $E_{\theta}$는 12개의 트랜스포머 블록과 768의 임베딩 차원을
+갖는 DINOv2 ViT-B/14 비전 트랜스포머~\cite{Oquab2024DINOv2,Dosovitskiy2021ViT}이며, dense prediction에서
 나타나는 high-norm 특징 맵 아티팩트를 완화하는 네 개의 register
 token을 추가로 포함한다~\cite{Darcet2024Registers}. 인코더는 전체가
 동결된 상태로 유지된다. 즉, 모든 백본 파라미터는 gradient 계산에서
 제외되고, 백본은 학습 전 기간에 걸쳐 추론 모드로 유지되며, 특징은
 gradient 추적 없이 추출된다. 동결은 두 가지 목적을 가진다. 첫째,
 powder bed 세그멘테이션의 라벨 희소(label-scarce) 환경---사람이 주석한
-전체 미세조정 코퍼스가 125개 레이어에
-불과하다(\S\ref{sec:method-training})---에서 86\,M 파라미터 인코더를
+전체 미세조정 코퍼스가 소규모에
+그친다(\S\ref{sec:setup-stage2-corpus})---에서 인코더를
 갱신하면 심각한 과적합을 초래할 뿐 아니라, 자기지도 사전학습으로
 획득한 범용 시각 표현을 훼손하게 되는데, 바로 이 표현이 장비, 재료,
 카메라 간 전이를 가능하게 하는 핵심이다. 둘째, 동결은 운영 측면에서도
-경제적이다. 체크포인트에는 학습 가능한 융합, 디코더, 헤드
-모듈(14.6\,M 파라미터)만 저장되며, 백본은 로드 시 공개 배포된
-가중치로부터 다시 인스턴스화된다.
+경제적이다. 체크포인트에는 학습 가능한 융합, 디코더, 헤드 모듈만
+저장되며, 백본은 로드 시 공개 배포된 가중치로부터 다시
+인스턴스화된다.
 
 한 레이어의 두 이미지는 \emph{동일한} 백본 인스턴스로 처리된다(가중치
 공유 이중 forward). 각 이미지 $I_t$, $t \in \{0, 1\}$에 대해
@@ -617,115 +649,65 @@ $\mathbf{S} \in \mathbb{R}^{H \times W \times C}$는 $C = 11$인 픽셀
 Powder bed 이미지에 대한 픽셀 단위 전문가 주석은 비용이 크고, 그에
 따라 가용한 사람 GT는 희소하다. 따라서 DefectSegAM은 \emph{규모}와
 \emph{라벨 품질}을 분리하는 두 단계로 학습된다. Stage~1은 기계 생성
-pseudo-label(의사 라벨)이 부여된 수만 장의 레이어에 대해 디코더를
+pseudo-label(의사 라벨)이 부여된 만여 장의 레이어에 대해 디코더를
 사전학습하고, Stage~2는 소규모의 이질적인 사람 주석 코퍼스에 대해
-미세조정한다. 전체 레시피는 표~\ref{tab:method-hparams}에 정리하였다.
+미세조정한다. 두 단계 모두 \S\ref{sec:method-arch}에서 설명한 이유로
+인코더를 동결한 채 융합, 디코더, 헤드만 학습한다. 두 코퍼스의 구성은
+\S\ref{sec:setup-corpora}에, 에포크 수와 옵티마이저 설정 등 수치
+설정은 \S\ref{sec:setup-impl}에 정리하였다.
 
 \paragraph{Stage 1: 지식 증류로서의 의사 라벨 사전학습}
-Stage~1은 다섯 개 빌드로 구성된 ORNL Co-Registered L-PBF 데이터셋~\cite{ORNL_CoRegistered_Dataset,VPPM_Baseline}을 사용한다. 이
-빌드들에는 사람이 만든 마스크가 존재하지 않으며, 대신 데이터셋에는
-Peregrine 모니터링 플랫폼에 배치된 production DSCNN 세그멘테이션
-모델의 레이어별 예측 마스크가 포함되어 있다~\cite{Scime2020DSCNN}. 본
-연구에서는 이 12채널 예측 마스크를 픽셀별 argmax를 통해 hard label로
-변환하고, 표~\ref{tab:classes}의 11-클래스 온톨로지로 재매핑하여 감독
-신호로 사용한다. 이는 hard-label knowledge distillation(지식 증류)~\cite{Hinton2015KD}에 해당한다. 즉, production DSCNN이 teacher 역할을
-하며, DefectSegAM은 사람 주석을 접하기 전에 대규모로 teacher의 라벨링
-행동을 재현하도록 학습된다. 빌드 B1.2--B1.5가 학습 집합을 이루고 빌드
-B1.1은 검증용으로 남겨 둔다(hold out). 각 빌드를 레이어 범위의 내부
-5--95\,\%로 제한하고 결함 픽셀이 전혀 없는 레이어를 제거한 뒤,
-Stage~1은 12{,}607개 레이어로 학습하고 3{,}218개 레이어로 검증한다.
+Stage~1의 감독 신호는 ORNL Co-Registered L-PBF
+데이터셋~\cite{ORNL_CoRegistered_Dataset,VPPM_Baseline}의 다섯 개
+빌드에 대해 데이터셋이 함께 제공하는, Peregrine 모니터링 플랫폼에
+배치된 production DSCNN 세그멘테이션 모델의 레이어별 예측
+마스크이다~\cite{Scime2020DSCNN}. 이 빌드들에는 사람이 만든 마스크가
+존재하지 않으므로, 본 연구에서는 이 예측 마스크를 hard 의사 라벨로
+변환하여 감독 신호로 사용한다. 이는 hard-label knowledge
+distillation(지식 증류)~\cite{Hinton2015KD}에 해당한다. 즉, production
+DSCNN이 teacher 역할을 하며, DefectSegAM은 사람 주석을 접하기 전에
+대규모로 teacher의 라벨링 행동을 재현하도록 학습된다. 의사 라벨 변환
+절차와 11-클래스 온톨로지로의 재매핑, 학습 빌드와 검증 빌드의 분할,
+레이어 선별 규칙, 그 결과의 레이어 수는
+\S\ref{sec:setup-stage1-corpus}에 기술한다.
 
-이러한 구성으로부터 중요한 주의점이 따른다. Stage-1 라벨 자체가
-학습된 모델의 출력이므로, 학습 중 ORNL 빌드에서 모니터링되는 모든
-수치---Stage-1 모델 선택에 사용되는 검증 픽셀 정확도와 Stage-2 모델
-선택에 사용되는 mean intersection-over-union(mIoU)을 포함하여---는
-사람 GT에 대한 정확도가 아니라 \emph{DSCNN teacher와의 일치도}를
-측정한다. student는 teacher의 체계적 오류를 물려받으며, 의사 라벨
-지표는 student가 옳고 teacher가 틀린 경우를 드러내지 못한다. Stage~2는
-사람의 감독을 주입함으로써 이 편향을 부분적으로 교정하며, 세그멘테이션
-품질에 대한 결정적 평가는 \S\ref{sec:results}의 hold-out 사람 주석
-평가로 미룬다.
-
-Stage~1은 \S\ref{sec:method-imbalance}의 클래스 가중 focal loss를 30
-에포크 동안 최적화하며, AdamW~\cite{Loshchilov2019AdamW}(weight decay
-$10^{-4}$), 4-GPU distributed data parallelism 하의 GPU당 배치 크기
-4(유효 배치 크기 16), 그리고 최고 학습률 $2.83 \times 10^{-4}$(기본
-학습률 $2 \times 10^{-4}$를 GPU당 배치가 두 배가 된 것에 맞춰
-$\sqrt{2}$배로 스케일링)를 사용한다. 학습률 스케줄은 200-step 선형
-warmup(전체 스텝의 1/4로 상한) 후 0까지의 cosine decay이며,
-gradient-norm clipping은 1.0, 정밀도는 전 구간 FP32(mixed-precision
-autocasting 미사용)이다. 학습 가능한 가중치에 대해서는 decay 0.9999의
-exponential moving average(EMA)를 유지하며, 검증과 저장되는 best
-체크포인트에는 EMA 가중치를 사용한다. 최상의 Stage-1 체크포인트는
-3{,}218개 레이어 전체의 hold-out 빌드에서 검증 픽셀 정확도가 가장
-높은 에포크로 선택한다.
+Stage~1은 \S\ref{sec:method-imbalance}의 클래스 가중 focal loss를
+AdamW~\cite{Loshchilov2019AdamW}로 최적화하며, 학습률은 선형 warmup
+후 cosine decay를 따른다. 학습 가능한 가중치에 대해서는 exponential
+moving average(EMA)를 유지하고 검증과 best 체크포인트 저장에 EMA
+가중치를 사용하여, 개별 에포크의 가중치 변동이 모델 선택에 미치는
+영향을 줄인다. 최상의 Stage-1 체크포인트는 검증용으로 유보한 ORNL
+빌드에서 DSCNN 유래 라벨에 대한 픽셀 정확도가 가장 높은 에포크로
+선택한다.
 
 \paragraph{Stage 2: 사람 GT 미세조정}
-Stage~2는 공개 Peregrine 머신러닝 릴리스~\cite{Peregrine_v2021_03,Peregrine_v2022_10}의 전문가 주석 레이어에
-대해 Stage-1 디코더를 미세조정한다(옵티마이저 상태는 재설정되고,
-인코더는 동결 상태를 유지한다). 여덟 개의 장비/재료 소스가 공동으로
-학습된다. 여섯 개의 레이저 PBF 소스---SS~316L을 프린팅하는 Concept
-Laser M2, 네 가지 EOS M290 구성(17-4~PH 스테인리스강,
-GammaPrint-700, 그리고 두 개의 Inconel~718 세트), maraging steel을
-프린팅하는 AddUp FormUp~350---와 두 개의 binder-jetting
-소스(SiC/B$_4$C/H13을 사용하는 ExOne Innovent급 프린터와 H13 공구강을
-사용하는 ExOne M-Flex)이다. 이들은 합계 125개의 전문가 주석
-레이어(레이저 PBF 98개, binder-jetting 27개)를 제공하며, 같은 릴리스의
-전자빔 PBF 부분은 사용하지 않는다(\S\ref{sec:setup}). 각 소스의
-고유(native) 라벨 공간(장비별로 6개에서 15개 사이의 클래스)은 두
-단계로 재매핑된다. 먼저 고유 식별자를 ORNL 12-클래스 공간으로, 이어서
-표~\ref{tab:classes}의 11-클래스 온톨로지로 매핑하며, 대응 클래스가
-없는 고유 클래스(예: ``Soot'', ``Crashing'', ``Stripe Boundary'')에는
-ignore index를 할당하여 손실에서 제외한다. 소스별 전체 매핑 사전은
-\S\ref{sec:setup}에 제시한다.
+Stage~2는 공개 Peregrine 머신러닝
+릴리스~\cite{Peregrine_v2021_03,Peregrine_v2022_10}의 전문가 주석
+레이어에 대해 Stage-1 디코더를 미세조정한다(옵티마이저 상태는
+재설정되고, 인코더는 동결 상태를 유지한다). 레이저 PBF와
+binder-jetting에 걸친 여덟 개의 장비/재료 소스를 소스별 모델 없이
+공동으로 학습하며, 소스의 크기가 크게 다르므로
+\S\ref{sec:method-imbalance}의 소스 균형 샘플링을 사용한다. 각 소스의
+고유(native) 라벨 공간은 먼저 ORNL 12-클래스 공간으로, 이어서
+표~\ref{tab:classes}의 11-클래스 온톨로지로 두 단계로 재매핑하며,
+대응 클래스가 없는 고유 클래스에는 ignore index를 할당하여 손실에서
+제외한다. 소스 구성과 대표적인 매핑 예는
+\S\ref{sec:setup-stage2-corpus}에 제시하며, 소스별 전체 매핑 사전은
+구현 코드에 정의되어 있다.
 
-Stage~2는 Stage~1과 동일한 옵티마이저, 배치, 학습률, cosine 스케줄,
-clipping, 정밀도, EMA 설정으로 50 에포크 동안 학습하되, warmup은 더
-짧은 50-step을 사용하고 랜덤 시드는 42로 고정한다(프로세스 rank별
-오프셋 적용). 코퍼스가 작기 때문에 각 고유 샘플은 에포크당 $K = 4$회
-복제되며, 각 복제본은 독립적인 증강(\S\ref{sec:method-inference})을
-받는다. 손실은 focal loss가 아니라, Stage~1과 동일한 제곱근 역빈도
-가중 방식(clip 10, \S\ref{sec:method-imbalance})을 사용하되 가중치를
-Stage-2 코퍼스의 클래스 픽셀 수로부터 재계산한 평범한 클래스 가중
-cross-entropy이다. 모델 선택은 에포크마다 한 번, hold-out ORNL
-빌드에서 균일하게 서브샘플링한 200개 레이어에 대한 mIoU를 평가한다.
-앞서 언급했듯 이 기준 역시 DSCNN 유래 라벨과의 일치도를 측정하는
-것으로, ORNL 빌드에 사람 마스크가 없는 상황에서 불가피하게 취한
-실용적 절충이다. 학습은 4-GPU distributed data parallelism을 사용하며,
-GPU당 배치 크기 4에서 GPU당 약 20\,GB의 메모리 사용량이 측정되었다.
-
-\begin{table}[t]
-\centering
-\caption{DefectSegAM의 2단계 학습 레시피. 두 단계 모두 융합, 디코더,
-헤드 파라미터(14.6\,M)만 학습하며, 인코더는 전 기간 동결된다. DDP:
-distributed data parallelism; EMA: 학습 가중치의 exponential moving
-average; CE: cross-entropy. 모델 선택 지표는 hold-out ORNL 빌드 B1.1의
-DSCNN 유래 라벨에 대해 계산된다(teacher와의 일치도, 본문 참조).}
-\label{tab:method-hparams}
-\small
-\begin{tabular}{lll}
-\toprule
-설정 & Stage~1 (의사 라벨 사전학습) & Stage~2 (사람 GT 미세조정) \\
-\midrule
-학습 데이터 & ORNL 빌드 B1.2--B1.5, 12{,}607개 레이어 & 8-소스 Peregrine GT 코퍼스, 125개 레이어 \\
-감독 신호 & DSCNN argmax 의사 라벨 & 전문가 픽셀 단위 주석 \\
-초기화 & 무작위 (디코더) & Stage-1 best 디코더; 옵티마이저 재설정 \\
-에포크 & 30 & 50 \\
-배치 크기 & GPU당 4 $\times$ 4 GPU (유효 16) & GPU당 4 $\times$ 4 GPU (유효 16) \\
-옵티마이저 & AdamW, weight decay $10^{-4}$ & AdamW, weight decay $10^{-4}$ \\
-최고 학습률 & $2.83 \times 10^{-4}$ & $2.83 \times 10^{-4}$ \\
-스케줄 & 200-step warmup, cosine으로 0까지 감쇠 & 50-step warmup, cosine으로 0까지 감쇠 \\
-Gradient clipping & 1.0 (norm) & 1.0 (norm) \\
-정밀도 & FP32 (AMP 미사용) & FP32 (AMP 미사용) \\
-손실 & Focal ($\gamma = 2$), 클래스 가중치 (clip 10) & 가중 CE, 클래스 가중치 (clip 10) \\
-샘플링 & Class-aware 레이어 가중치, 식~\eqref{eq:method-layerweight} & 소스 균형 $\times$ class-aware, 식~\eqref{eq:method-stage2weight} \\
-샘플 복제 & --- & 에포크당 $K = 4$ \\
-EMA decay & 0.9999 (검증 및 체크포인트) & 0.9999 (검증 및 체크포인트) \\
-랜덤 시드 & 고정하지 않음 & 42 ($+$ rank 오프셋) \\
-모델 선택 & 픽셀 정확도, B1.1 (3{,}218개 레이어) & mIoU, B1.1 (200-레이어 부분집합) \\
-\bottomrule
-\end{tabular}
-\end{table}
+Stage~2는 Stage~1과 같은 옵티마이저와 스케줄 형태를 더 짧은 warmup과
+함께 사용하되, 코퍼스가 작기 때문에 각 고유 샘플을 에포크당 $K$회
+복제하고 각 복제본에 독립적인 증강(\S\ref{sec:method-inference})을
+적용한다. 손실은 focal loss가 아니라, Stage~1과 동일한 제곱근 역빈도
+가중 방식의 가중치를 Stage-2 코퍼스의 클래스 픽셀 수로부터 재계산한
+평범한 클래스 가중 cross-entropy이다(근거는
+\S\ref{sec:method-imbalance}). 모델 선택은 에포크마다 한 번,
+검증용 ORNL 빌드에서 균일하게 서브샘플링한 레이어에 대해 DSCNN 유래
+라벨로 계산한 mean intersection-over-union(mIoU)으로 수행하며, 이는
+ORNL 빌드에 사람 마스크가 없는 상황에서 취한 실용적
+절충이다(\S\ref{sec:setup-metrics}). 에포크 수, warmup 길이, 복제 횟수
+$K$, 랜덤 시드, 모델 선택에 사용한 레이어 수는 \S\ref{sec:setup-impl}에
+제시한다.
 
 % -------------------------------------------------------------------------
 \subsection{클래스 불균형 대응 전략}
@@ -734,9 +716,9 @@ EMA decay & 0.9999 (검증 및 체크포인트) & 0.9999 (검증 및 체크포�
 표~\ref{tab:classes}의 픽셀 통계는 가중치 없는 손실과 균일한 레이어
 샘플링으로는 head 클래스가 학습을 지배하게 됨을 분명히 보여준다.
 Powder와 Printed를 합치면 $1.6 \times 10^{10}$개가 넘는 픽셀을
-차지하는 반면, Recoater Hopping은 전체 ORNL 코퍼스에서 25개 픽셀만을
-제공하며, 그 밖의 여러 결함 클래스도 거의 전적으로 단일 빌드에
-국한된다. DefectSegAM은 이를 서로 보완적인 세 가지
+차지하는 반면, Recoater Hopping은 전체 ORNL 코퍼스에서 극소수의
+픽셀만을 제공하며, 그 밖의 여러 결함 클래스도 거의 전적으로 단일
+빌드에 국한된다. DefectSegAM은 이를 서로 보완적인 세 가지
 메커니즘---class-aware sampling, Copy-Paste augmentation, 클래스 가중
 focal loss---으로 대응하며, 이들은 각각 데이터 선택, 데이터 합성,
 최적화의 수준에서 적용된다.
@@ -775,7 +757,7 @@ Stage~2에서는 class-aware 가중치를 소스 균형 인자와 곱셈적으�
 $i$가 속한 소스의 샘플 수이다. 이를 통해 어떤 단일 장비/재료도
 에포크를 지배하지 못하게 하면서도, 각 소스 내부에서는 희소 클래스
 레이어가 여전히 과대표집(over-represented)되도록 한다. 이 가중치는
-$K = 4$개의 복제본에 걸쳐 그대로 반복(tile)된다.
+$K$개의 복제본에 걸쳐 그대로 반복(tile)된다.
 
 \paragraph{Copy-Paste 증강}
 샘플링만으로는 어떤 클래스가 레이어 간 분포에서뿐 아니라 절대적인
@@ -825,7 +807,7 @@ gradient를 집중시키는 식~\eqref{eq:focal}의 focal loss~\cite{Lin2017Foca
 ignore index가 부여된 픽셀은 제외되며, 손실은 유효 픽셀에 대해서만
 평균한다. Stage~2는 같은 형태의 가중치 $\beta_c$를 Stage-2 코퍼스의
 클래스 픽셀 수로부터 재계산하여 사용하는 평범한
-cross-entropy를 사용한다(표~\ref{tab:method-hparams}). Stage-1
+cross-entropy를 사용한다(\S\ref{sec:setup-impl}). Stage-1
 사전학습 이후에는 사람 주석 코퍼스가 작고 강하게 재샘플링되므로,
 focusing 항은 그 단계에서 유지하지 않는다.
 
@@ -881,9 +863,9 @@ Spatter)}: 면적이 30픽셀 이상인 Spatter 성분 가운데, Printed 마스
 후처리를 활성화한 경우 이를 항상 명시한다.
 
 \paragraph{다운스트림 활용을 위한 원본 해상도 추론}
-다운스트림 인장 특성 사례 연구(\S\ref{sec:results})를 위해,
-DefectSegAM은 다섯 개 ORNL 빌드 전체의 모든 레이어에 대해 원본 카메라
-해상도인 $1842 \times 1842$ 픽셀에서 실행된다. 각 이미지 쌍은
+다운스트림 인장 특성 사례 연구(\S\ref{sec:results-downstream})를
+위해, DefectSegAM은 다섯 개 ORNL 빌드 전체의 모든 레이어에 대해 원본
+카메라 해상도인 $1842 \times 1842$ 픽셀에서 실행된다. 각 이미지 쌍은
 백분위수 정규화 후 $1036 \times 1036$ 모델 해상도로 bilinear
 리사이즈되어 레이어 여덟 장의 배치로 forward되고, 클래스 logit은
 argmax 이전에 원본 $1842 \times 1842$ 격자로 다시 bilinear
@@ -893,9 +875,6 @@ ORNL 이미지 프레임에서 학습되었으므로, 그 출력은 데이터셋
 식별자 마스크와 픽셀 단위로 정렬된다. 이 다운스트림 패스는 의도적으로
 레이어당 단일 결정론적 forward만 사용하며 TTA와 후처리 규칙을 모두
 적용하지 않는데, 이는 특성 예측 비교가 세그멘테이션 소스 자체의
-효과만을 분리해서 보도록 하기 위함이다. 결과 라벨맵으로부터는 여덟
-개의 결함 클래스(Recoater Hopping, Recoater Streaking, Swelling,
-Debris, Super-Elevation, Spatter, Over Melting, Under Melting)만
-다운스트림 피처 채널로 유지하고---Powder, Printed, Incomplete
-Spreading은 제외한다---베이스라인 특성 예측 파이프라인~\cite{VPPM_Baseline}과 정확히 동일한 방식으로 슈퍼복셀 단위로
-집계한다. 집계의 세부 사항은 \S\ref{sec:setup-downstream}에 제시한다.
+효과만을 분리해서 보도록 하기 위함이다. 결과 라벨맵에서 다운스트림
+피처 채널로 유지하는 클래스의 선택과 슈퍼복셀 집계는
+\S\ref{sec:setup-downstream}에 제시한다.
