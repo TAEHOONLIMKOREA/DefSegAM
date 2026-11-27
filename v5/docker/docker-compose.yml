@@ -1,0 +1,238 @@
+# DefSeg-AM v5 — v4 의 11-class 그대로 + 사람 GT 전용 단일 단계 학습 (Stage 1 KD 없음)
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/v5/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # 1) 검증 fold — 길이 (TOTAL_STEPS) 를 정하고 GT 전용 학습의 일반화 성능을 본다
+#   DEFSEG_V5_PHASE=cv docker compose up -d --build
+#   docker compose logs -f
+#   #    fold 하나만 먼저:
+#   DEFSEG_V5_PHASE=cv DEFSEG_V5_FOLDS=loso_L21 docker compose up -d --build
+#
+#   # 2) 전수 학습 (8 소스 125 레이어) — 배포 후보 checkpoints/<run>/full/last.pt
+#   DEFSEG_V5_PHASE=train docker compose up -d --build
+#   DEFSEG_V5_PHASE=train DEFSEG_V5_EXTRA="--total-steps 6000 --ema-decay 0.998" docker compose up -d --build
+#
+#   # 3) ORNL Build 1 참고 평가 (DSCNN 예측과의 일치도) · figure
+#   DEFSEG_V5_PHASE=confusion docker compose up -d --build
+#   DEFSEG_V5_PHASE=infer     docker compose up -d --build
+#
+#   # 스모크 (1 GPU, 224², 6 step)
+#   DEFSEG_V5_PHASE=cv DEFSEG_V5_FOLDS=loso_L21 NPROC=1 NVIDIA_VISIBLE_DEVICES=2 \
+#     DEFSEG_V5_EXTRA=--quick docker compose up --build
+#
+# GPU 선택 (default 0,1,2,3):
+#   NVIDIA_VISIBLE_DEVICES=2,3 NPROC=2 docker compose up -d --build
+#
+services:
+  defseg-am-v5:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/v5/docker/Dockerfile
+    image: defseg-am-v5:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않고 docker 기본 bridge 를 쓴다. 서비스가 하나라 전용 네트워크가 필요 없고,
+    # 호스트의 compose 네트워크가 주소 풀 (기본 31개) 을 다 쓰면 새 프로젝트는 네트워크 생성에서 실패한다.
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-0,1,2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - MPLCONFIGDIR=/tmp/mplconfig
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DEFSEG_V5_PHASE=${DEFSEG_V5_PHASE:-}           # cv|summarize|eval|train|confusion|infer|all
+      - DEFSEG_V5_EXTRA=${DEFSEG_V5_EXTRA:-}
+      - DEFSEG_V5_FOLDS=${DEFSEG_V5_FOLDS:-loso_L21 loso_MS loso_I2 loso_GP inlayer}
+      - DEFSEG_V5_SOOT=${DEFSEG_V5_SOOT:-ignore}       # ignore = 기존 v5 (Soot 는 미레이블) | spatter = Soot 를 Spatter 로 배운다 (run 이름에 -soot2sp)
+      - NPROC=${NPROC:-4}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (DSCNN_Dataset 사람 GT + 참고 평가용 원본 HDF5) - read-only
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (backbone weight) - rw
+      # 컨테이너 안에서는 HOME=/tmp 이므로 /tmp/.cache/torch 에 마운트
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[v5] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[v5] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.v5_write_test" 2>/dev/null; then
+          echo "[v5] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.v5_write_test"
+
+        usage() {
+          echo "[v5] DEFSEG_V5_PHASE 를 지정할 것:"
+          echo "       cv         검증 fold 학습 (DEFSEG_V5_FOLDS) → native 채점 → 요약"
+          echo "       summarize  검증 fold 요약만 다시 (GPU 불필요)"
+          echo "       eval       검증 fold 의 native 채점만 다시 (예: DEFSEG_V5_EXTRA='--tta --postprocess')"
+          echo "       train      전수 학습 (8 소스 125 레이어) → checkpoints/<run>/full/last.pt"
+          echo "       confusion  ORNL Build 1 참고 평가 (DSCNN 예측과의 일치도)"
+          echo "       infer      ORNL figure (TTA + 후처리)"
+          echo "       all        train → confusion → infer   (cv 는 포함하지 않는다)"
+        }
+        if [ -z "$${DEFSEG_V5_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        $$VENV_PY -c "import torch,sys; print(f'[v5] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+
+        echo "[v5] phase=$${DEFSEG_V5_PHASE} nproc=$${NPROC} folds='$${DEFSEG_V5_FOLDS}' extra='$${DEFSEG_V5_EXTRA}'"
+
+        BACKBONE=dinov2_vitb14_reg
+        V4_CKPT=$$OUT/checkpoints/vitb14_reg_dpt_dual_sz1036_11cls_v4/stage2_best.pt
+
+        # ── --quick 처리 ──
+        # train.py 의 --quick 은 224² 로 돌리고 run-name 도 sz224 가 된다. 채점 · 요약 단계는 --quick 을
+        # 모르므로 여기서 같은 run 을 가리키게 하고 표본 수를 줄인다.
+        QUICK=0
+        case " $${DEFSEG_V5_EXTRA} " in *" --quick "*) QUICK=1 ;; esac
+        EXTRA_NOQ=$$(echo " $${DEFSEG_V5_EXTRA} " | sed 's/ --quick / /')
+        if [ "$$QUICK" = 1 ]; then
+          IMG=224; EVAL_SMOKE="--max-layers 2"; CONF_SMOKE="--max-batches 2"; INFER_SMOKE="--n-layers 1"
+        else
+          IMG=1036; EVAL_SMOKE=""; CONF_SMOKE=""; INFER_SMOKE=""
+        fi
+        # Soot 를 Spatter 로 배우는 실행 (DEFSEG_V5_SOOT=spatter) 은 run 이름에 꼬리가 붙는다 (config_v5.RUN_SUFFIX 와 같아야 한다)
+        case "$${DEFSEG_V5_SOOT}" in
+          ignore|"") SOOT_SUFFIX="" ;;
+          spatter)   SOOT_SUFFIX="-soot2sp" ;;
+          *) echo "[v5] FATAL: DEFSEG_V5_SOOT 는 ignore | spatter 가운데 하나다: $${DEFSEG_V5_SOOT}" >&2; exit 1 ;;
+        esac
+        RUN=vitb14_reg_dpt_dual_sz$${IMG}_11cls_v5$${SOOT_SUFFIX}
+        echo "[v5] run=$$RUN  (Soot 주석: $${DEFSEG_V5_SOOT:-ignore})"
+
+        if [ "$${NPROC}" != 4 ] && [ "$$QUICK" = 0 ]; then
+          echo "[v5] 주의: NPROC=$${NPROC} — effective batch 가 4 × $${NPROC} 이다 (계획값 16 = 4 GPU × 4)."
+        fi
+
+        # ── 사전조건 ──
+        need_gt() {
+          if [ ! -d "/workspace/ORNL_Data/DSCNN_Dataset" ]; then
+            echo "[v5] FATAL: /workspace/ORNL_Data/DSCNN_Dataset 없음 — 사람 GT (학습 데이터)" >&2; exit 1
+          fi
+        }
+        need_full_ckpt() {
+          if [ ! -f "$$OUT/checkpoints/$$RUN/full/last.pt" ]; then
+            echo "[v5] FATAL: $$OUT/checkpoints/$$RUN/full/last.pt 없음 — DEFSEG_V5_PHASE=train 을 먼저 실행" >&2; exit 1
+          fi
+        }
+        need_ref_cache() {
+          # 참고 평가만 캐시를 읽는다: 이미지는 v1, 라벨은 v4 (클래스 공간이 같다)
+          if [ ! -f "$$OUT/cache/resized_sz1036/B1/visible_0.npy" ]; then
+            echo "[v5] FATAL: v1 이미지 캐시 (cache/resized_sz1036/B1) 없음 — v1 build_cache_stage1 을 먼저 실행" >&2; exit 1
+          fi
+          if [ ! -f "$$OUT/cache/resized_sz1036_v4/val_index.npz" ]; then
+            echo "[v5] FATAL: v4 라벨 캐시 (cache/resized_sz1036_v4) 없음 — v4 의 DEFSEG_V4_PHASE=build_cache 를 먼저 실행" >&2; exit 1
+          fi
+        }
+
+        # ── Backbone prefetch (DDP race 방지) ──
+        # 4-rank 가 동시에 torch.hub.load() 하면 cache 추출/삭제 race condition 발생.
+        prefetch_backbone() {
+          echo "[v5] prefetching backbone $$BACKBONE …"
+          $$VENV_PY -c "
+        from DefSeg_AM.common.models.model import DefSegModel
+        m = DefSegModel(backbone_name='$$BACKBONE', n_classes=11)
+        print('[v5] backbone prefetch OK')
+        "
+        }
+
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        run_train() {   # $$@ = (없음: 전수 학습) | --fold <name>
+          ddp -m DefSeg_AM.v5.training.train \
+            --backbone $$BACKBONE --batch-size 4 --num-workers 4 \
+            "$$@" $${DEFSEG_V5_EXTRA}
+        }
+        run_eval_folds() {   # $$@ = evaluate_gt 에 넘길 추가 인자
+          for f in $${DEFSEG_V5_FOLDS}; do
+            if [ ! -f "$$OUT/checkpoints/$$RUN/cv/$$f/last.pt" ]; then
+              echo "[v5] skip eval: $$f 의 ckpt 없음"; continue
+            fi
+            echo "[v5] === native 채점: $$f (v5) ==="
+            $$VENV_PY -u -m DefSeg_AM.v5.inference.evaluate_gt \
+              --img-size $$IMG --fold $$f $$EVAL_SMOKE "$$@"
+            if [ -f "$$V4_CKPT" ]; then
+              echo "[v5] === native 채점: $$f (v4 참고 — v4 는 이 표본을 학습에 썼다) ==="
+              $$VENV_PY -u -m DefSeg_AM.v5.inference.evaluate_gt \
+                --img-size $$IMG --fold $$f --checkpoint "$$V4_CKPT" --tag-prefix ref_v4 $$EVAL_SMOKE "$$@"
+            else
+              echo "[v5] v4 ckpt 없음 ($$V4_CKPT) — 참고 채점 생략"
+            fi
+          done
+        }
+        run_summarize() {
+          $$VENV_PY -u -m DefSeg_AM.v5.scripts.summarize_cv --img-size $$IMG
+        }
+        run_cv() {
+          need_gt
+          prefetch_backbone
+          for f in $${DEFSEG_V5_FOLDS}; do
+            echo "[v5] === 검증 fold 학습: $$f ==="
+            run_train --fold $$f
+          done
+          run_eval_folds
+          run_summarize
+        }
+        run_full() {
+          need_gt
+          prefetch_backbone
+          run_train
+        }
+        run_confusion() {
+          need_full_ckpt; need_ref_cache
+          $$VENV_PY -u -m DefSeg_AM.v5.inference.confusion \
+            --img-size $$IMG --split val $$CONF_SMOKE "$$@"
+        }
+        run_infer() {
+          need_full_ckpt
+          $$VENV_PY -u -m DefSeg_AM.v5.inference.infer \
+            --img-size $$IMG --tta --postprocess $$INFER_SMOKE "$$@"
+        }
+
+        case "$${DEFSEG_V5_PHASE}" in
+          cv)         run_cv ;;
+          summarize)  run_summarize ;;
+          eval)       need_gt; run_eval_folds $$EXTRA_NOQ; run_summarize ;;
+          train)      run_full ;;
+          confusion)  run_confusion $$EXTRA_NOQ ;;
+          infer)      run_infer $$EXTRA_NOQ ;;
+          all)        run_full; run_confusion; run_infer ;;
+          *)
+            echo "[v5] FATAL: unknown DEFSEG_V5_PHASE=$${DEFSEG_V5_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[v5] phase=$${DEFSEG_V5_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다.
+    # v3 · v4 의 compose 에 있는 `deploy.resources.reservations.devices (count: all)` 블록은 넣지 않는다 —
+    # 그 블록이 있으면 컨테이너 안의 NVIDIA_VISIBLE_DEVICES 가 all 로 덮여서, 무엇을 지정하든 GPU 4개가 다 보이고
+    # NPROC 개의 프로세스가 항상 GPU 0 부터 올라간다 (2026-11-16 에 nvidia-smi -L 로 확인).
