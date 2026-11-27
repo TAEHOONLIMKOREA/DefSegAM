@@ -1,0 +1,10 @@
+{
+ "run_name": "vitb14_reg_dpt_dual_sz1036_10cls_v6",
+ "fold": null,
+ "steps": 10000,
+ "wall_minutes": 114.40547647476197,
+ "train_it_per_s": 1.4568067176699675,
+ "best_step": null,
+ "best_defect_miou_ema": null,
+ "final_val_ema": null
+}
