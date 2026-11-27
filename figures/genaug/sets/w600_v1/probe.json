@@ -1,0 +1,65 @@
+{
+ "set": "w600_v1",
+ "n_layers": 150,
+ "backbone": "dinov2_vitb14_reg",
+ "patch_px": 14,
+ "note": "AUC of a linear classifier on frozen backbone patch features (last stage, visible/0 + visible/1), test = held-out layers. real_vs_generated: 0 = real photo, 1 = generated (same layer, same patches). real_build_vs_build: two real builds (reference)",
+ "real_vs_generated": {
+  "Pow": {
+   "auc": 1.0,
+   "acc": 1.0,
+   "n_train": 31500,
+   "n_test": 13500
+  },
+  "Prt": {
+   "auc": 1.0,
+   "acc": 1.0,
+   "n_train": 2454,
+   "n_test": 1004
+  }
+ },
+ "real_build_vs_build_powder": {
+  "B5_vs_B3": {
+   "auc": 1.0,
+   "acc": 1.0,
+   "n_train": 10650,
+   "n_test": 4650
+  },
+  "B5_vs_B4": {
+   "auc": 1.0,
+   "acc": 1.0,
+   "n_train": 10200,
+   "n_test": 4350
+  },
+  "B3_vs_B4": {
+   "auc": 1.0,
+   "acc": 1.0,
+   "n_train": 10650,
+   "n_test": 4500
+  }
+ },
+ "frechet_powder": {
+  "dim": 64,
+  "real_vs_generated": {
+   "B5": 564.2628338203501,
+   "B3": 355.5439258974998,
+   "B4": 348.7299043429807
+  },
+  "real_build_vs_build": {
+   "B5_vs_B3": 950.1842614410834,
+   "B5_vs_B4": 1033.7893458056221,
+   "B3_vs_B4": 1085.2139914814315
+  },
+  "real_within_build": {
+   "B5": 23.98989140718959,
+   "B3": 15.058295211787026,
+   "B4": 54.87683880899908
+  },
+  "mean": {
+   "real_vs_generated": 422.84555468694356,
+   "real_build_vs_build": 1023.0625329093791,
+   "real_within_build": 31.30834180932523
+  },
+  "generated_gap_over_build_gap": 0.4133134985253129
+ }
+}

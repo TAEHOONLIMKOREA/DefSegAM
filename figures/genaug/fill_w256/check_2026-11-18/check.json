@@ -1,0 +1,610 @@
+{
+ "outside_unchanged_22rows": true,
+ "whole_window": {
+  "B3_cad_label": {
+   "v0": {
+    "mean": {
+     "real": 100.557,
+     "gen": 100.648
+    },
+    "std": {
+     "real": 13.431,
+     "gen": 13.377
+    },
+    "grain": {
+     "real": 6.688,
+     "gen": 6.573
+    },
+    "streak": {
+     "real": 1.685,
+     "gen": 1.789
+    },
+    "seam_mean": {
+     "real": 0.125,
+     "gen": 0.263
+    },
+    "seam_grain": {
+     "real": 1.052,
+     "gen": 1.021
+    },
+    "mean_abs_diff": 0.651,
+    "seam_mean_abs": {
+     "real": 0.721,
+     "gen": 0.512
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 100.496,
+     "gen": 100.531
+    },
+    "std": {
+     "real": 2.562,
+     "gen": 1.809
+    },
+    "grain": {
+     "real": 1.869,
+     "gen": 1.088
+    },
+    "streak": {
+     "real": 0.415,
+     "gen": 0.241
+    },
+    "seam_mean": {
+     "real": -0.024,
+     "gen": 0.128
+    },
+    "seam_grain": {
+     "real": 1.008,
+     "gen": 0.565
+    },
+    "mean_abs_diff": 0.383,
+    "seam_mean_abs": {
+     "real": 0.092,
+     "gen": 0.356
+    }
+   }
+  },
+  "B3_no_label": {
+   "v0": {
+    "mean": {
+     "real": 100.557,
+     "gen": 100.829
+    },
+    "std": {
+     "real": 13.431,
+     "gen": 12.485
+    },
+    "grain": {
+     "real": 6.688,
+     "gen": 6.54
+    },
+    "streak": {
+     "real": 1.685,
+     "gen": 1.697
+    },
+    "seam_mean": {
+     "real": 0.125,
+     "gen": 0.329
+    },
+    "seam_grain": {
+     "real": 1.052,
+     "gen": 0.966
+    },
+    "mean_abs_diff": 0.687,
+    "seam_mean_abs": {
+     "real": 0.721,
+     "gen": 0.499
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 100.496,
+     "gen": 100.676
+    },
+    "std": {
+     "real": 2.562,
+     "gen": 1.785
+    },
+    "grain": {
+     "real": 1.869,
+     "gen": 1.206
+    },
+    "streak": {
+     "real": 0.415,
+     "gen": 0.273
+    },
+    "seam_mean": {
+     "real": -0.024,
+     "gen": 0.28
+    },
+    "seam_grain": {
+     "real": 1.008,
+     "gen": 0.642
+    },
+    "mean_abs_diff": 0.495,
+    "seam_mean_abs": {
+     "real": 0.092,
+     "gen": 0.401
+    }
+   }
+  },
+  "B4_cad_label": {
+   "v0": {
+    "mean": {
+     "real": 90.603,
+     "gen": 93.461
+    },
+    "std": {
+     "real": 19.042,
+     "gen": 20.933
+    },
+    "grain": {
+     "real": 8.791,
+     "gen": 8.113
+    },
+    "streak": {
+     "real": 2.264,
+     "gen": 2.163
+    },
+    "seam_mean": {
+     "real": 0.032,
+     "gen": 0.738
+    },
+    "seam_grain": {
+     "real": 0.985,
+     "gen": 0.907
+    },
+    "mean_abs_diff": 2.398,
+    "seam_mean_abs": {
+     "real": 0.891,
+     "gen": 1.015
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 93.905,
+     "gen": 94.3
+    },
+    "std": {
+     "real": 3.784,
+     "gen": 2.938
+    },
+    "grain": {
+     "real": 2.325,
+     "gen": 1.714
+    },
+    "streak": {
+     "real": 0.664,
+     "gen": 0.407
+    },
+    "seam_mean": {
+     "real": -0.023,
+     "gen": 0.271
+    },
+    "seam_grain": {
+     "real": 0.972,
+     "gen": 0.539
+    },
+    "mean_abs_diff": 0.804,
+    "seam_mean_abs": {
+     "real": 0.159,
+     "gen": 0.313
+    }
+   }
+  },
+  "B4_no_label": {
+   "v0": {
+    "mean": {
+     "real": 90.603,
+     "gen": 91.404
+    },
+    "std": {
+     "real": 19.042,
+     "gen": 18.372
+    },
+    "grain": {
+     "real": 8.791,
+     "gen": 8.253
+    },
+    "streak": {
+     "real": 2.264,
+     "gen": 2.112
+    },
+    "seam_mean": {
+     "real": 0.032,
+     "gen": 0.275
+    },
+    "seam_grain": {
+     "real": 0.985,
+     "gen": 0.93
+    },
+    "mean_abs_diff": 1.288,
+    "seam_mean_abs": {
+     "real": 0.891,
+     "gen": 1.308
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 93.905,
+     "gen": 93.934
+    },
+    "std": {
+     "real": 3.784,
+     "gen": 2.83
+    },
+    "grain": {
+     "real": 2.325,
+     "gen": 1.493
+    },
+    "streak": {
+     "real": 0.664,
+     "gen": 0.437
+    },
+    "seam_mean": {
+     "real": -0.023,
+     "gen": 0.138
+    },
+    "seam_grain": {
+     "real": 0.972,
+     "gen": 0.577
+    },
+    "mean_abs_diff": 0.645,
+    "seam_mean_abs": {
+     "real": 0.159,
+     "gen": 0.374
+    }
+   }
+  },
+  "B5_cad_label": {
+   "v0": {
+    "mean": {
+     "real": 94.132,
+     "gen": 93.983
+    },
+    "std": {
+     "real": 9.571,
+     "gen": 9.469
+    },
+    "grain": {
+     "real": 5.037,
+     "gen": 4.8
+    },
+    "streak": {
+     "real": 1.519,
+     "gen": 1.283
+    },
+    "seam_mean": {
+     "real": -0.337,
+     "gen": -0.311
+    },
+    "seam_grain": {
+     "real": 0.902,
+     "gen": 0.68
+    },
+    "mean_abs_diff": 0.629,
+    "seam_mean_abs": {
+     "real": 0.542,
+     "gen": 0.904
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 92.885,
+     "gen": 92.961
+    },
+    "std": {
+     "real": 2.936,
+     "gen": 1.84
+    },
+    "grain": {
+     "real": 2.148,
+     "gen": 1.119
+    },
+    "streak": {
+     "real": 0.976,
+     "gen": 0.565
+    },
+    "seam_mean": {
+     "real": -0.04,
+     "gen": 0.127
+    },
+    "seam_grain": {
+     "real": 0.999,
+     "gen": 0.519
+    },
+    "mean_abs_diff": 0.41,
+    "seam_mean_abs": {
+     "real": 0.135,
+     "gen": 0.353
+    }
+   }
+  },
+  "B5_no_label": {
+   "v0": {
+    "mean": {
+     "real": 94.132,
+     "gen": 94.505
+    },
+    "std": {
+     "real": 9.571,
+     "gen": 8.894
+    },
+    "grain": {
+     "real": 5.037,
+     "gen": 4.228
+    },
+    "streak": {
+     "real": 1.519,
+     "gen": 1.297
+    },
+    "seam_mean": {
+     "real": -0.337,
+     "gen": -0.204
+    },
+    "seam_grain": {
+     "real": 0.902,
+     "gen": 0.733
+    },
+    "mean_abs_diff": 0.632,
+    "seam_mean_abs": {
+     "real": 0.542,
+     "gen": 0.796
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 92.885,
+     "gen": 93.014
+    },
+    "std": {
+     "real": 2.936,
+     "gen": 2.056
+    },
+    "grain": {
+     "real": 2.148,
+     "gen": 1.391
+    },
+    "streak": {
+     "real": 0.976,
+     "gen": 0.772
+    },
+    "seam_mean": {
+     "real": -0.04,
+     "gen": 0.179
+    },
+    "seam_grain": {
+     "real": 0.999,
+     "gen": 0.641
+    },
+    "mean_abs_diff": 0.48,
+    "seam_mean_abs": {
+     "real": 0.135,
+     "gen": 0.33
+    }
+   }
+  },
+  "GT_train_layers_gt_label": {
+   "v0": {
+    "mean": {
+     "real": 134.22,
+     "gen": 135.882
+    },
+    "std": {
+     "real": 14.993,
+     "gen": 14.861
+    },
+    "grain": {
+     "real": 3.038,
+     "gen": 2.507
+    },
+    "streak": {
+     "real": 1.268,
+     "gen": 1.273
+    },
+    "seam_mean": {
+     "real": -0.427,
+     "gen": 0.01
+    },
+    "seam_grain": {
+     "real": 0.958,
+     "gen": 0.793
+    },
+    "mean_abs_diff": 1.386,
+    "seam_mean_abs": {
+     "real": 1.332,
+     "gen": 1.125
+    }
+   },
+   "v1": {
+    "mean": {
+     "real": 129.264,
+     "gen": 130.278
+    },
+    "std": {
+     "real": 5.023,
+     "gen": 4.567
+    },
+    "grain": {
+     "real": 1.739,
+     "gen": 1.067
+    },
+    "streak": {
+     "real": 0.743,
+     "gen": 0.575
+    },
+    "seam_mean": {
+     "real": -0.336,
+     "gen": -0.283
+    },
+    "seam_grain": {
+     "real": 0.999,
+     "gen": 0.739
+    },
+    "mean_abs_diff": 0.928,
+    "seam_mean_abs": {
+     "real": 0.787,
+     "gen": 0.722
+    }
+   }
+  }
+ },
+ "insert": {
+  "DB": {
+   "v0": {
+    "real_objects": -20.02,
+    "generated": -12.72,
+    "background_before": -0.03,
+    "real_q25_q75": [
+     -26.73,
+     -8.72
+    ],
+    "gen_q25_q75": [
+     -13.95,
+     -9.45
+    ],
+    "same_sign_frac": 1.0
+   },
+   "v1": {
+    "real_objects": -1.38,
+    "generated": -3.91,
+    "background_before": -0.27,
+    "real_q25_q75": [
+     -11.98,
+     0.02
+    ],
+    "gen_q25_q75": [
+     -6.28,
+     -2.43
+    ],
+    "same_sign_frac": 1.0
+   },
+   "n": 24
+  },
+  "SE": {
+   "v0": {
+    "real_objects": 31.56,
+    "generated": 37.45,
+    "background_before": 30.44,
+    "real_q25_q75": [
+     7.86,
+     51.03
+    ],
+    "gen_q25_q75": [
+     14.24,
+     58.95
+    ],
+    "same_sign_frac": 0.88
+   },
+   "v1": {
+    "real_objects": 27.96,
+    "generated": 27.73,
+    "background_before": 0.08,
+    "real_q25_q75": [
+     8.93,
+     40.66
+    ],
+    "gen_q25_q75": [
+     25.08,
+     37.98
+    ],
+    "same_sign_frac": 1.0
+   },
+   "n": 24
+  },
+  "SP": {
+   "v0": {
+    "real_objects": -13.63,
+    "generated": -8.48,
+    "background_before": 0.09,
+    "real_q25_q75": [
+     -33.38,
+     -4.02
+    ],
+    "gen_q25_q75": [
+     -10.51,
+     -6.64
+    ],
+    "same_sign_frac": 1.0
+   },
+   "v1": {
+    "real_objects": -1.16,
+    "generated": -1.47,
+    "background_before": 0.02,
+    "real_q25_q75": [
+     -2.9,
+     -0.03
+    ],
+    "gen_q25_q75": [
+     -2.47,
+     -1.13
+    ],
+    "same_sign_frac": 0.96
+   },
+   "n": 24
+  },
+  "RH": {
+   "v0": {
+    "real_objects": 1.84,
+    "generated": 4.95,
+    "background_before": -0.17,
+    "real_q25_q75": [
+     1.18,
+     3.16
+    ],
+    "gen_q25_q75": [
+     4.07,
+     5.6
+    ],
+    "same_sign_frac": 0.92
+   },
+   "v1": {
+    "real_objects": 2.18,
+    "generated": 2.4,
+    "background_before": -0.01,
+    "real_q25_q75": [
+     1.22,
+     2.86
+    ],
+    "gen_q25_q75": [
+     1.82,
+     2.98
+    ],
+    "same_sign_frac": 1.0
+   },
+   "n": 24
+  },
+  "OM": {
+   "v0": {
+    "real_objects": -17.99,
+    "generated": -42.12,
+    "background_before": 4.74,
+    "real_q25_q75": [
+     -26.94,
+     -8.58
+    ],
+    "gen_q25_q75": [
+     -60.73,
+     -27.08
+    ],
+    "same_sign_frac": 0.92
+   },
+   "v1": {
+    "real_objects": -1.41,
+    "generated": -1.08,
+    "background_before": -0.37,
+    "real_q25_q75": [
+     -3.3,
+     0.98
+    ],
+    "gen_q25_q75": [
+     -2.27,
+     -0.02
+    ],
+    "same_sign_frac": 0.79
+   },
+   "n": 24
+  }
+ }
+}

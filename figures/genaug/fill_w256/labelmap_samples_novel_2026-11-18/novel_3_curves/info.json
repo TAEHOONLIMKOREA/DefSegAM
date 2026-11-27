@@ -1,0 +1,120 @@
+{
+ "name": "novel_3_curves",
+ "note": "파트 = 나선 · 물결 띠 · 불규칙한 덩어리 · 꽃 모양 · 가지 — 파트와 결함의 모양을 전부 스크립트가 그렸다 (데이터셋의 마스크를 읽지 않음)",
+ "defects": [
+  [
+   "RH wavy lines",
+   492,
+   626
+  ],
+  [
+   "RH wavy lines",
+   545,
+   889
+  ],
+  [
+   "SE edge",
+   697,
+   301
+  ],
+  [
+   "SE edge",
+   877,
+   789
+  ],
+  [
+   "SE edge",
+   833,
+   902
+  ],
+  [
+   "SE edge",
+   860,
+   924
+  ],
+  [
+   "SE zigzag",
+   573,
+   764
+  ],
+  [
+   "DB blob",
+   294,
+   684
+  ],
+  [
+   "DB blob",
+   48,
+   145
+  ],
+  [
+   "DB blob",
+   815,
+   211
+  ],
+  [
+   "DB blob",
+   500,
+   205
+  ],
+  [
+   "DB triangle",
+   724,
+   593
+  ],
+  [
+   "DB plus",
+   965,
+   338
+  ],
+  [
+   "DB ring",
+   755,
+   425
+  ],
+  [
+   "SP dots",
+   838,
+   396
+  ],
+  [
+   "SP dots",
+   880,
+   108
+  ],
+  [
+   "SP dots",
+   965,
+   807
+  ],
+  [
+   "SP dots",
+   799,
+   712
+  ],
+  [
+   "SP dots",
+   697,
+   75
+  ]
+ ],
+ "mean": [
+  122.4,
+  121.5
+ ],
+ "class_px": {
+  "Pow": 912638,
+  "Prt": 68428,
+  "IS": 0,
+  "PS": 0,
+  "RS": 0,
+  "RH": 2700,
+  "SE": 2166,
+  "SP": 970,
+  "OM": 0,
+  "DB": 1586
+ },
+ "unlabeled_px": 84808,
+ "sampler": "50 steps spaced toward low noise, guidance 2.0, 36 windows stitched, no real pixels",
+ "ckpt": "/home/taehoon/3DP_VPPM/DefSeg_AM/checkpoints/genaug/fill_w256/ema_step_100000.pt"
+}

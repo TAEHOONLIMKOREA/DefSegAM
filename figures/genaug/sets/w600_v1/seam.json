@@ -1,0 +1,233 @@
+{
+ "set": "w600_v1",
+ "n_layers": 600,
+ "block_px": 32,
+ "order": "spiral",
+ "stride": 192,
+ "unit": "gray levels (0-255), RMS",
+ "note": "v = 세로 이음매 (좌우 창 사이), h = 가로 이음매. seg_w* = 32 px 토막마다의 계단, edge = 창의 한 변에 걸친 평균 계단 (w 8). seam = 창 사이, frame = 진짜 가장자리와 그린 안쪽 사이, control = 이음매가 아닌 자리. real = 같은 레이어의 진짜 사진의 같은 자리",
+ "visible0": {
+  "v": {
+   "seg_w8": {
+    "gen_seam": 1.021281675536633,
+    "n_gen_seam": 53226,
+    "gen_control": 0.8895537847102682,
+    "n_gen_control": 10845553,
+    "gen_frame": 1.2350687054428868,
+    "n_gen_frame": 31173,
+    "real_seam": 1.290917273115306,
+    "n_real_seam": 53226,
+    "real_control": 1.2722224011991363,
+    "n_real_control": 10845553,
+    "real_frame": 0.949103471006105,
+    "n_real_frame": 31173,
+    "seam_gen_over_real": 0.7911286778834596,
+    "seam_gen_over_control": 1.1480831098585782,
+    "frame_gen_over_real": 1.3013003778541048
+   },
+   "seg_w32": {
+    "gen_seam": 1.5378550358470051,
+    "n_gen_seam": 52077,
+    "gen_control": 1.4605473041628563,
+    "n_gen_control": 4084338,
+    "gen_frame": 2.1113191442775037,
+    "n_gen_frame": 30698,
+    "real_seam": 1.9283561225110106,
+    "n_real_seam": 52077,
+    "real_control": 1.9749462935968494,
+    "n_real_control": 4084338,
+    "real_frame": 2.0092106336578106,
+    "n_real_frame": 30698,
+    "seam_gen_over_real": 0.7974953474073481,
+    "seam_gen_over_control": 1.0529306592561611,
+    "frame_gen_over_real": 1.050820212131668
+   },
+   "edge": {
+    "gen_seam": 0.6378841390351951,
+    "n_gen_seam": 4638,
+    "gen_control": 0.6182545039165692,
+    "n_gen_control": 9219,
+    "real_seam": 0.7664506929298408,
+    "n_real_seam": 4638,
+    "real_control": 1.0202693141849613,
+    "n_real_control": 9219,
+    "seam_gen_over_real": 0.8322572409672094,
+    "seam_gen_over_control": 1.0317500883443218
+   }
+  },
+  "h": {
+   "seg_w8": {
+    "gen_seam": 1.1021630469057802,
+    "n_gen_seam": 52572,
+    "gen_control": 0.8340041552109702,
+    "n_gen_control": 10907899,
+    "gen_frame": 1.675214371908509,
+    "n_gen_frame": 30358,
+    "real_seam": 1.1389668990506177,
+    "n_real_seam": 52572,
+    "real_control": 1.1811572174107579,
+    "n_real_control": 10907899,
+    "real_frame": 1.3832764357128293,
+    "n_real_frame": 30358,
+    "seam_gen_over_real": 0.9676866358666655,
+    "seam_gen_over_control": 1.3215318413215535,
+    "frame_gen_over_real": 1.2110481525301473
+   },
+   "seg_w32": {
+    "gen_seam": 1.7239941837476627,
+    "n_gen_seam": 52195,
+    "gen_control": 1.43514432882797,
+    "n_gen_control": 4211412,
+    "gen_frame": 2.3534520391401745,
+    "n_gen_frame": 30781,
+    "real_seam": 2.2489204665143125,
+    "n_real_seam": 52195,
+    "real_control": 1.9942429435174311,
+    "n_real_control": 4211412,
+    "real_frame": 2.694991099392247,
+    "n_real_frame": 30781,
+    "seam_gen_over_real": 0.766587440248497,
+    "seam_gen_over_control": 1.2012688543706165,
+    "frame_gen_over_real": 0.8732689468514039
+   },
+   "edge": {
+    "gen_seam": 0.6588812667702748,
+    "n_gen_seam": 4154,
+    "gen_control": 0.5143859697848682,
+    "n_gen_control": 8397,
+    "real_seam": 0.5966106096873609,
+    "n_real_seam": 4154,
+    "real_control": 0.969790957060041,
+    "n_real_control": 8397,
+    "seam_gen_over_real": 1.1043740357140905,
+    "seam_gen_over_control": 1.2809083168536632
+   }
+  },
+  "blocks": {
+   "gen": {
+    "cell_std": 2.9761918895448907,
+    "between_window_std": 2.4259659894314254
+   },
+   "real": {
+    "cell_std": 4.195262049693323,
+    "between_window_std": 3.4211629741783995
+   },
+   "between_window_gen_over_real": 0.7091056485007198
+  }
+ },
+ "visible1": {
+  "v": {
+   "seg_w8": {
+    "gen_seam": 0.5889015330755314,
+    "n_gen_seam": 53226,
+    "gen_control": 0.4200167364368114,
+    "n_gen_control": 10845553,
+    "gen_frame": 0.7584112073810091,
+    "n_gen_frame": 31173,
+    "real_seam": 0.46831083749460223,
+    "n_real_seam": 53226,
+    "real_control": 0.4964890858536259,
+    "n_real_control": 10845553,
+    "real_frame": 0.4677878940862763,
+    "n_real_frame": 31173,
+    "seam_gen_over_real": 1.2575013984858274,
+    "seam_gen_over_control": 1.4020906358909522,
+    "frame_gen_over_real": 1.6212715569786245
+   },
+   "seg_w32": {
+    "gen_seam": 0.7845968259851019,
+    "n_gen_seam": 52077,
+    "gen_control": 0.6135318125587292,
+    "n_gen_control": 4084338,
+    "gen_frame": 1.4312420068552123,
+    "n_gen_frame": 30698,
+    "real_seam": 0.5604898075745969,
+    "n_real_seam": 52077,
+    "real_control": 0.7317965134793187,
+    "n_real_control": 4084338,
+    "real_frame": 0.6777011242632746,
+    "n_real_frame": 30698,
+    "seam_gen_over_real": 1.399841380488758,
+    "seam_gen_over_control": 1.2788201197146527,
+    "frame_gen_over_real": 2.111907381607354
+   },
+   "edge": {
+    "gen_seam": 0.35204687285844866,
+    "n_gen_seam": 4638,
+    "gen_control": 0.17544926151077875,
+    "n_gen_control": 9219,
+    "real_seam": 0.19200132750958146,
+    "n_real_seam": 4638,
+    "real_control": 0.21530746414846186,
+    "n_real_control": 9219,
+    "seam_gen_over_real": 1.8335647853313952,
+    "seam_gen_over_control": 2.0065451961838017
+   }
+  },
+  "h": {
+   "seg_w8": {
+    "gen_seam": 0.7456025540002384,
+    "n_gen_seam": 52572,
+    "gen_control": 0.531757315967405,
+    "n_gen_control": 10907899,
+    "gen_frame": 1.5734614137335088,
+    "n_gen_frame": 30358,
+    "real_seam": 0.7840196065446156,
+    "n_real_seam": 52572,
+    "real_control": 0.7213093890520751,
+    "n_real_control": 10907899,
+    "real_frame": 0.7857648948619809,
+    "n_real_frame": 30358,
+    "seam_gen_over_real": 0.9509998828808742,
+    "seam_gen_over_control": 1.4021481822846071,
+    "frame_gen_over_real": 2.0024582722162543
+   },
+   "seg_w32": {
+    "gen_seam": 0.953114876034059,
+    "n_gen_seam": 52195,
+    "gen_control": 0.6758635375247023,
+    "n_gen_control": 4211412,
+    "gen_frame": 1.9349976545095262,
+    "n_gen_frame": 30781,
+    "real_seam": 0.9209775401967267,
+    "n_real_seam": 52195,
+    "real_control": 0.812918266198641,
+    "n_real_control": 4211412,
+    "real_frame": 1.4355503845102742,
+    "n_real_frame": 30781,
+    "seam_gen_over_real": 1.0348948095199666,
+    "seam_gen_over_control": 1.4102179258327328,
+    "frame_gen_over_real": 1.3479134382104145
+   },
+   "edge": {
+    "gen_seam": 0.508155319151044,
+    "n_gen_seam": 4154,
+    "gen_control": 0.3043990697800293,
+    "n_gen_control": 8397,
+    "real_seam": 0.5458930648234077,
+    "n_real_seam": 4154,
+    "real_control": 0.5257915392184193,
+    "n_real_control": 8397,
+    "seam_gen_over_real": 0.9308697103807837,
+    "seam_gen_over_control": 1.6693721157500807
+   }
+  },
+  "blocks": {
+   "gen": {
+    "cell_std": 2.0385379247585007,
+    "between_window_std": 1.7788214861787583
+   },
+   "real": {
+    "cell_std": 2.4246095006247774,
+    "between_window_std": 2.063042402127146
+   },
+   "between_window_gen_over_real": 0.8622321501219096
+  }
+ },
+ "K4": {
+  "criterion": "edge step (generated) <= 2 x the real photo at the same place — worst of 2 photos x 2 directions",
+  "worst_ratio": 1.8335647853313952,
+  "worst_at": "visible1 v",
+  "pass": true
+ }
+}

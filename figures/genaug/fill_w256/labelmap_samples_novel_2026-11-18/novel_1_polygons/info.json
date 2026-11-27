@@ -1,0 +1,120 @@
+{
+ "name": "novel_1_polygons",
+ "note": "파트 = 삼각형 · 육각형 · 별 · 십자 · 톱니바퀴 · 화살표 — 파트와 결함의 모양을 전부 스크립트가 그렸다 (데이터셋의 마스크를 읽지 않음)",
+ "defects": [
+  [
+   "RH wavy lines",
+   747,
+   259
+  ],
+  [
+   "RH wavy lines",
+   388,
+   790
+  ],
+  [
+   "SE edge",
+   493,
+   501
+  ],
+  [
+   "SE edge",
+   288,
+   362
+  ],
+  [
+   "SE edge",
+   928,
+   972
+  ],
+  [
+   "SE edge",
+   654,
+   924
+  ],
+  [
+   "SE zigzag",
+   302,
+   721
+  ],
+  [
+   "DB blob",
+   880,
+   209
+  ],
+  [
+   "DB blob",
+   795,
+   658
+  ],
+  [
+   "DB blob",
+   725,
+   620
+  ],
+  [
+   "DB blob",
+   976,
+   527
+  ],
+  [
+   "DB triangle",
+   845,
+   106
+  ],
+  [
+   "DB plus",
+   734,
+   58
+  ],
+  [
+   "DB ring",
+   592,
+   383
+  ],
+  [
+   "SP dots",
+   587,
+   784
+  ],
+  [
+   "SP dots",
+   231,
+   182
+  ],
+  [
+   "SP dots",
+   259,
+   554
+  ],
+  [
+   "SP dots",
+   241,
+   381
+  ],
+  [
+   "SP dots",
+   407,
+   444
+  ]
+ ],
+ "mean": [
+  125.5,
+  121.9
+ ],
+ "class_px": {
+  "Pow": 883948,
+  "Prt": 102052,
+  "IS": 0,
+  "PS": 0,
+  "RS": 0,
+  "RH": 2865,
+  "SE": 2399,
+  "SP": 870,
+  "OM": 0,
+  "DB": 1927
+ },
+ "unlabeled_px": 79235,
+ "sampler": "50 steps spaced toward low noise, guidance 2.0, 36 windows stitched, no real pixels",
+ "ckpt": "/home/taehoon/3DP_VPPM/DefSeg_AM/checkpoints/genaug/fill_w256/ema_step_100000.pt"
+}

@@ -1,0 +1,120 @@
+{
+ "name": "novel_2_letters",
+ "note": "파트 = 큰 글자 (DEFSEG / AM 2026 / LPBF) — 파트와 결함의 모양을 전부 스크립트가 그렸다 (데이터셋의 마스크를 읽지 않음)",
+ "defects": [
+  [
+   "RH wavy lines",
+   564,
+   640
+  ],
+  [
+   "RH wavy lines",
+   591,
+   320
+  ],
+  [
+   "SE edge",
+   433,
+   668
+  ],
+  [
+   "SE edge",
+   405,
+   538
+  ],
+  [
+   "SE edge",
+   188,
+   880
+  ],
+  [
+   "SE edge",
+   474,
+   756
+  ],
+  [
+   "SE zigzag",
+   829,
+   164
+  ],
+  [
+   "DB blob",
+   231,
+   146
+  ],
+  [
+   "DB blob",
+   45,
+   759
+  ],
+  [
+   "DB blob",
+   319,
+   55
+  ],
+  [
+   "DB blob",
+   785,
+   412
+  ],
+  [
+   "DB triangle",
+   578,
+   918
+  ],
+  [
+   "DB plus",
+   260,
+   557
+  ],
+  [
+   "DB ring",
+   868,
+   91
+  ],
+  [
+   "SP dots",
+   779,
+   222
+  ],
+  [
+   "SP dots",
+   627,
+   90
+  ],
+  [
+   "SP dots",
+   265,
+   302
+  ],
+  [
+   "SP dots",
+   198,
+   51
+  ],
+  [
+   "SP dots",
+   648,
+   472
+  ]
+ ],
+ "mean": [
+  152.4,
+  138.3
+ ],
+ "class_px": {
+  "Pow": 822169,
+  "Prt": 161475,
+  "IS": 0,
+  "PS": 0,
+  "RS": 0,
+  "RH": 3850,
+  "SE": 2957,
+  "SP": 907,
+  "OM": 0,
+  "DB": 1747
+ },
+ "unlabeled_px": 80191,
+ "sampler": "50 steps spaced toward low noise, guidance 2.0, 36 windows stitched, no real pixels",
+ "ckpt": "/home/taehoon/3DP_VPPM/DefSeg_AM/checkpoints/genaug/fill_w256/ema_step_100000.pt"
+}
