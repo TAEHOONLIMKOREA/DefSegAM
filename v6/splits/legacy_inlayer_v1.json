@@ -1,0 +1,67 @@
+{
+ "name": "legacy_inlayer_v1",
+ "created": "2026-11-17",
+ "description": "P0 · P1 의 Peregrine 검증 레이어 (PLAN_v6 §3.3, §7.1). v5 의 inlayer fold 가 떼어 둔 22 레이어와 같은 목록이다 — 소스마다 레이어를 이름순으로 세어 5개마다 다섯째. 매핑 결정 (D3 · D4) 이 바뀌어도 검증 레이어가 흔들리지 않도록 목록으로 고정한다.",
+ "origin": "DefSeg_AM/figures/vitb14_reg_dpt_dual_sz1036_11cls_v5/v5/cv/inlayer/run.json 의 val_samples",
+ "key_format": "<process_code>/<layer:07d>  (변환한 데이터셋 index.csv 의 process_code · layer)",
+ "val": [
+  "v2021_LPBF/0000010",
+  "v2021_LPBF/0000015",
+  "v2021_LPBF/0000020",
+  "v2021_LPBF/0000216",
+  "v2022_17-4PH/0000004",
+  "v2022_17-4PH/0000009",
+  "v2022_GammaPrint/0000004",
+  "v2022_Inc718_1/0000004",
+  "v2022_Inc718_2/0000004",
+  "v2022_Inc718_2/0000009",
+  "v2022_Inc718_2/0000014",
+  "v2022_Inc718_2/0000019",
+  "v2022_Maraging/0000004",
+  "v2022_Maraging/0000009",
+  "v2022_Maraging/0000014",
+  "v2022_Maraging/0000019",
+  "v2022_Maraging/0000024",
+  "v2021_BJ/0000004",
+  "v2021_BJ/0000010",
+  "v2021_BJ/0000017",
+  "v2021_BJ/0000022",
+  "v2022_BJ_H13/0000004"
+ ],
+ "expected": {
+  "note": "아래 데이터셋 옵션으로 변환한 125 레이어를 1036² (라벨 NEAREST) 로 줄였을 때의 클래스별 화소 수 (PLAN_v6 §7.1 의 표, id 0–9 순). 학습 스크립트가 시작할 때 run.json 의 값과 대조한다. 데이터셋을 다른 옵션으로 다시 변환하면 달라지는 것이 정상이다.",
+  "img_size": 1036,
+  "dataset": {
+   "swelling": "se",
+   "is_review": "DefSeg_AM/v6/legacy_review.csv",
+   "is_review_sha256": "ea85b7f6795cacd626786bbc91f9754f68661968f86d5a21eb60341940f430ce",
+   "converted_at": "2026-11-17T16:25:44+09:00"
+  },
+  "n_train": 103,
+  "n_val": 22,
+  "class_train_px": [
+   79250968,
+   11766209,
+   412504,
+   11023719,
+   245892,
+   1010309,
+   261346,
+   2916812,
+   40062,
+   241770
+  ],
+  "class_val_px": [
+   17822166,
+   2061320,
+   379486,
+   1745690,
+   45417,
+   390419,
+   88408,
+   487614,
+   5076,
+   27049
+  ]
+ }
+}
