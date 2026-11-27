@@ -1,0 +1,132 @@
+{
+  "version": "pbf-2026.11",
+  "title": "PBF 파우더 베드 결함 레이블 — 결함 8 + 정상 2",
+  "source_document": "[레이블링] Defect_Examples_Annotated_rev02.pptx",
+  "image_types": [
+    { "key": "scanning", "visible": 0, "name": "Scanning", "name_ko": "레이저 용융 직후", "description_en": "After Laser Melting (Scanning Image)" },
+    { "key": "deposition", "visible": 1, "name": "Deposition", "name_ko": "분말 도포 직후", "description_en": "After Powder Spreading (Deposition Image)" }
+  ],
+  "principles": [
+    "두 이미지(Scanning · Deposition)는 한 쌍이며, 두 이미지를 함께 참고하여 하나의 레이블 맵을 만든다. 이미지마다 따로 만들지 않는다.",
+    "이미지의 모든 픽셀은 정상 또는 결함 클래스로 레이블링되어야 하며, 레이블이 지정되지 않은 영역이 없어야 한다.",
+    "결함이 확인된 영역에는 해당 결함 클래스를 부여하고, 결함 영역을 제외한 나머지 영역은 모두 정상 클래스로 레이블링한다.",
+    "정상 클래스는 Printed 와 Powder 두 가지로 구분한다."
+  ],
+  "principles_en": [
+    "The two images form a single pair and should be used together to generate one annotation map.",
+    "Every pixel in the image must be labeled as either a normal class or a defect class, ensuring that no pixels remain unlabeled.",
+    "Regions where defects are identified must be assigned to their corresponding defect classes, while all remaining regions must be labeled as normal classes.",
+    "The normal classes are divided into two categories: Printed and Powder."
+  ],
+  "unlabeled": {
+    "id": 255,
+    "export_value": -1,
+    "key": "unlabeled",
+    "name": "Unlabeled",
+    "name_ko": "미레이블",
+    "color": [40, 40, 48]
+  },
+  "eraser_default": 0,
+  "classes": [
+    {
+      "id": 0, "key": "powder", "name": "Powder", "abbr": "", "name_ko": "파우더",
+      "group": "normal", "source": "both", "shape": "background",
+      "color": [200, 200, 200], "hidden_default": true, "hotkey": "0",
+      "criteria_ko": "Printed 영역과 결함 영역을 제외한 나머지 모든 영역",
+      "criteria_en": "All remaining regions, excluding Printed and defect regions.",
+      "description_ko": "", "description_en": ""
+    },
+    {
+      "id": 1, "key": "printed", "name": "Printed", "abbr": "", "name_ko": "출력부",
+      "group": "normal", "source": "scanning", "shape": "area",
+      "color": [70, 120, 220], "hidden_default": false, "hotkey": "1",
+      "criteria_ko": "visible/0 에서 레이저가 조사되어 하얗게 나타나는 영역",
+      "criteria_en": "Regions in visible/0 that appear white due to laser exposure.",
+      "description_ko": "", "description_en": ""
+    },
+    {
+      "id": 2, "key": "incomplete_spreading", "name": "Incomplete Spreading", "abbr": "IS", "name_ko": "도포 불량",
+      "group": "defect", "source": "deposition", "shape": "area",
+      "color": [236, 112, 170], "hidden_default": false, "hotkey": "2",
+      "criteria_ko": "파우더 영역에 덮이다 만 미세한 자국(라인)이 남음",
+      "criteria_en": "Faint lines or marks remain in the powder region, indicating incomplete powder coverage.",
+      "description_ko": "파우더가 부족해서 일부 영역을 제대로 덮지 못함.",
+      "description_en": "Insufficient powder supply prevents certain areas from being completely covered."
+    },
+    {
+      "id": 3, "key": "powder_slumping", "name": "Powder Slumping", "aliases": ["Powder Collapse"], "abbr": "PS", "name_ko": "분말 무너짐",
+      "group": "defect", "source": "both", "shape": "area",
+      "color": [150, 82, 222], "hidden_default": false, "hotkey": "3",
+      "criteria_ko": "Incomplete Spreading 와 다르게 그림자가 지고 경사면이 있음",
+      "criteria_en": "Unlike Incomplete Spreading, this defect exhibits visible shadows and sloped surfaces.",
+      "description_ko": "파우더가 부족하거나 빌드플레이트 패드가 마모돼서 파우더가 산사태처럼 무너져 내린 형상",
+      "description_en": "Insufficient powder supply or wear of the build plate pad causes the powder to collapse in a landslide-like pattern."
+    },
+    {
+      "id": 4, "key": "recoater_streaking", "name": "Recoater Streaking", "abbr": "RS", "name_ko": "리코터 줄무늬",
+      "group": "defect", "source": "both", "shape": "line_parallel",
+      "color": [232, 52, 52], "hidden_default": false, "hotkey": "4",
+      "criteria_ko": "리코팅 방향 줄무늬. 완전한 직선 (본 데이터에서는 세로 줄무늬)",
+      "criteria_en": "Straight streaks parallel to the recoating direction. (Vertical streaks in this dataset.)",
+      "description_ko": "손상된 리코터로 리코팅해서 생기는, 리코팅 방향과 평행한 줄무늬",
+      "description_en": "Streaks parallel to the recoating direction caused by a damaged recoater blade."
+    },
+    {
+      "id": 5, "key": "recoater_hopping", "name": "Recoater Hopping", "abbr": "RH", "name_ko": "리코터 호핑",
+      "group": "defect", "source": "both", "shape": "line_perpendicular",
+      "color": [246, 206, 32], "hidden_default": false, "hotkey": "5",
+      "criteria_ko": "리코팅 방향과 수직인 줄무늬. 살짝 꼬불꼬불함. (본 데이터에서는 가로 줄무늬)",
+      "criteria_en": "Slightly wavy streaks perpendicular to the recoating direction. (Horizontal streaks in this dataset.)",
+      "description_ko": "리코터가 분말 표면 바로 아래의 파트와 충돌하여 생기는, 리코팅 방향과 수직인 줄무늬",
+      "description_en": "Streaks perpendicular to the recoating direction caused by the recoater colliding with a printed part just beneath the powder surface."
+    },
+    {
+      "id": 6, "key": "super_elevation", "name": "Super Elevation", "abbr": "SE", "name_ko": "돌출",
+      "group": "defect", "source": "deposition", "shape": "area",
+      "color": [0, 196, 222], "hidden_default": false, "hotkey": "6",
+      "criteria_ko": "Deposition 에서 파우더에 안덮힌 모든 출력물 부분을 표시하면 됨",
+      "criteria_en": "Label all exposed printed regions that are not covered by powder in the Deposition image.",
+      "description_ko": "파트가 파우더 위로 돌출 된 형상",
+      "description_en": "Printed parts protrude above the powder surface."
+    },
+    {
+      "id": 7, "key": "spatter", "name": "Spatter", "abbr": "SP", "name_ko": "스패터",
+      "group": "defect", "source": "scanning", "shape": "spots",
+      "color": [255, 0, 255], "hidden_default": false, "hotkey": "7",
+      "criteria_ko": "파우더 영역 에 재가 날린 것처럼 보이는 거뭇한 형상",
+      "criteria_en": "Dark, ash-like deposits scattered across the powder region.",
+      "description_ko": "용융 중 과도한 입자 방출로 실제로 재가 날린 거라 볼 수 있음",
+      "description_en": "Excessive particle ejection during laser melting causes spatter deposits on the powder surface."
+    },
+    {
+      "id": 8, "key": "over_melting", "name": "Over Melting", "abbr": "OM", "name_ko": "과용융",
+      "group": "defect", "source": "scanning", "shape": "area",
+      "color": [24, 168, 92], "hidden_default": false, "hotkey": "8",
+      "criteria_ko": "파트 영역 위에 거뭇하게 탄 자국이 보임",
+      "criteria_en": "Dark, burn-like marks appear on the printed region.",
+      "description_ko": "과도한 용융으로 타버림",
+      "description_en": "Excessive laser melting causes localized overheating and burn-like discoloration."
+    },
+    {
+      "id": 9, "key": "debris", "name": "Debris", "abbr": "DB", "name_ko": "파편",
+      "group": "defect", "source": "both", "shape": "blob",
+      "color": [255, 136, 0], "hidden_default": false, "hotkey": "9",
+      "criteria_ko": "파우더면에 불규칙한 덩어리나 조각 이 포착됨 (레이블 어려울 수 있음. Super Elevation과 혼동 가능)",
+      "criteria_en": "Irregular lumps or fragments are observed on the powder surface. (May be difficult to distinguish from Superelevation.)",
+      "description_ko": "출력물이 리코터랑 강하게 부딪혀서 떨어져나간 것.",
+      "description_en": "Fragments of the printed part break off due to severe collisions with the recoater."
+    }
+  ],
+  "model_maps": {
+    "defseg-v4": {
+      "description": "DefSegAM v4(11-class) 출력 id → 이 스키마 id. Swelling(5)·Under Melting(10) 은 새 체계에 없어 미레이블(255)로 들여와 사람이 정한다.",
+      "class_names": ["Powder", "Printed", "Recoater Hopping", "Recoater Streaking", "Incomplete Spreading", "Swelling", "Debris", "Super-Elevation", "Spatter", "Over Melting", "Under Melting"],
+      "ids": { "0": 0, "1": 1, "2": 5, "3": 4, "4": 2, "5": 255, "6": 9, "7": 6, "8": 7, "9": 8, "10": 255 },
+      "palette": [
+        [217, 217, 217], [77, 128, 217], [242, 140, 26], [230, 217, 38], [51, 166, 77],
+        [140, 77, 191], [128, 89, 51], [242, 102, 166], [102, 102, 102], [26, 179, 179], [191, 51, 26]
+      ],
+      "defect_ids": [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  }
+}
