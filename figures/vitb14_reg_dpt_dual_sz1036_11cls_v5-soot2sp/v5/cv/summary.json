@@ -1,0 +1,44 @@
+{
+ "run_name": "vitb14_reg_dpt_dual_sz1036_11cls_v5-soot2sp",
+ "folds": [
+  {
+   "fold": "inlayer",
+   "val_sources": [
+    "v2021_BJ",
+    "v2021_LPBF",
+    "v2022_17-4PH",
+    "v2022_BJ_H13",
+    "v2022_GammaPrint",
+    "v2022_Inc718_1",
+    "v2022_Inc718_2",
+    "v2022_Maraging"
+   ],
+   "n_train": 103,
+   "n_val": 22,
+   "defect_classes": [
+    "RH",
+    "RS",
+    "IS",
+    "Sw",
+    "DB",
+    "SE",
+    "SP",
+    "OM",
+    "UM"
+   ],
+   "total_steps": 10000,
+   "best_step": 10000,
+   "best_ema_defect_miou": 0.52138413648079,
+   "final_ema_defect_miou": 0.52138413648079,
+   "final_raw_defect_miou": 0.5216837973031807,
+   "final_ema_miou": 0.5947761350583055,
+   "final_ema_acc": 0.9431210063572947,
+   "native_defect_miou": 0.45864437738283215,
+   "native_miou": 0.5438351199238145,
+   "native_ref_v4_defect_miou": 0.04219462262469845,
+   "native_ref_v4_miou": 0.1470779887585081
+  }
+ ],
+ "loso_mean": null,
+ "recommendation": null
+}

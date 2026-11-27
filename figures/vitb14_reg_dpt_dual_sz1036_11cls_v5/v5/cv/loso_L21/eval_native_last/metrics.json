@@ -1,0 +1,101 @@
+{
+ "checkpoint": "/workspace/DefSeg_AM/checkpoints/vitb14_reg_dpt_dual_sz1036_11cls_v5/cv/loso_L21/last.pt",
+ "ckpt_version": "v5",
+ "ckpt_weights": "ema",
+ "ckpt_step": 10000,
+ "run_name": "vitb14_reg_dpt_dual_sz1036_11cls_v5",
+ "fold": "loso_L21",
+ "tag": "eval_native_last",
+ "img_size": 1036,
+ "tta": false,
+ "postprocess": false,
+ "resolution": "native",
+ "n_layers": 20,
+ "samples": [
+  "v2021_LPBF/0000004",
+  "v2021_LPBF/0000006",
+  "v2021_LPBF/0000007",
+  "v2021_LPBF/0000008",
+  "v2021_LPBF/0000010",
+  "v2021_LPBF/0000011",
+  "v2021_LPBF/0000012",
+  "v2021_LPBF/0000013",
+  "v2021_LPBF/0000014",
+  "v2021_LPBF/0000015",
+  "v2021_LPBF/0000016",
+  "v2021_LPBF/0000017",
+  "v2021_LPBF/0000018",
+  "v2021_LPBF/0000019",
+  "v2021_LPBF/0000020",
+  "v2021_LPBF/0000021",
+  "v2021_LPBF/0000022",
+  "v2021_LPBF/0000033",
+  "v2021_LPBF/0000161",
+  "v2021_LPBF/0000216"
+ ],
+ "class_names": [
+  "Powder",
+  "Printed",
+  "Recoater Hopping",
+  "Recoater Streaking",
+  "Incomplete Spreading",
+  "Swelling",
+  "Debris",
+  "Super-Elevation",
+  "Spatter",
+  "Over Melting",
+  "Under Melting"
+ ],
+ "overall": {
+  "acc": 0.9341949430252203,
+  "miou": 0.37882740090811556,
+  "defect_miou": 0.17836486579507912,
+  "iou": [
+   0.9374013638995818,
+   0.8225661134818314,
+   null,
+   0.05632659659379852,
+   0.1862619020210824,
+   0.2243913119376533,
+   0.2784066250969886,
+   0.1464378933258729,
+   null,
+   null,
+   null
+  ],
+  "defect_classes": [
+   3,
+   4,
+   5,
+   6,
+   7
+  ]
+ },
+ "by_source": {
+  "v2021_LPBF": {
+   "acc": 0.9341949430252203,
+   "miou": 0.37882740090811556,
+   "defect_miou": 0.17836486579507912,
+   "iou": [
+    0.9374013638995818,
+    0.8225661134818314,
+    null,
+    0.05632659659379852,
+    0.1862619020210824,
+    0.2243913119376533,
+    0.2784066250969886,
+    0.1464378933258729,
+    null,
+    null,
+    null
+   ],
+   "defect_classes": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  }
+ }
+}

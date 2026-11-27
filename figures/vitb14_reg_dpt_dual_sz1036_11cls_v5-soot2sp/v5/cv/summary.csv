@@ -1,0 +1,2 @@
+fold,val_sources,n_train,n_val,defect_classes,total_steps,best_step,best_ema_defect_miou,final_ema_defect_miou,final_raw_defect_miou,final_ema_miou,final_ema_acc,native_defect_miou,native_miou,native_ref_v4_defect_miou,native_ref_v4_miou
+inlayer,v2021_BJ v2021_LPBF v2022_17-4PH v2022_BJ_H13 v2022_GammaPrint v2022_Inc718_1 v2022_Inc718_2 v2022_Maraging,103,22,RH RS IS Sw DB SE SP OM UM,10000,10000,0.52138413648079,0.52138413648079,0.5216837973031807,0.5947761350583055,0.9431210063572947,0.45864437738283215,0.5438351199238145,0.04219462262469845,0.1470779887585081

@@ -1,0 +1,12 @@
+GT\Pred,0:Powder,1:Printed,2:Recoater Hopping,3:Recoater Streaking,4:Incomplete Spreading,5:Swelling,6:Debris,7:Super-Elevation,8:Spatter,9:Over Melting,10:Under Melting
+0:Powder,3117375593,131226067,31509,168369,399709,121265,1730131,90106,46956,10597,9
+1:Printed,3242040,160993960,2524,288,24,1136580,46568,218532,0,1619,467
+2:Recoater Hopping,0,0,0,0,0,0,0,0,0,0,0
+3:Recoater Streaking,1274028,9492,166,13933,50,332,8035,117,26,0,0
+4:Incomplete Spreading,324768,809,0,0,4,0,24,42,0,0,0
+5:Swelling,4392,500487,2,0,0,323247,200,27074,0,37,0
+6:Debris,0,0,0,0,0,0,0,0,0,0,0
+7:Super-Elevation,0,0,0,0,0,0,0,2,0,0,0
+8:Spatter,11914356,15592925,12387,75862,1585136,72488,142513,5641,55361,1778,0
+9:Over Melting,0,0,0,0,0,0,0,0,0,0,0
+10:Under Melting,0,0,0,0,0,0,0,0,0,0,0
