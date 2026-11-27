@@ -1,0 +1,2 @@
+fold,val_groups,n_train,n_val,defect_classes,wiring_match,total_steps,best_step,best_ema_defect_miou,final_ema_defect_miou,final_raw_defect_miou,final_ema_miou,final_ema_acc,native_defect_miou,native_miou,resized_defect_miou,copy_resized_defect_miou,v5_native_defect_miou,v5_resized_defect_miou,v4_native_defect_miou,v4_resized_defect_miou
+loso_L21,v2021_LPBF,105,20,IS PS RS SE SP DB,,10000,4750,0.1708227200480238,0.16717982588293337,0.16659893464138492,0.339550851360339,0.903031846161005,0.1653568750740689,0.3382278281928954,0.16718337051609936,,,,,

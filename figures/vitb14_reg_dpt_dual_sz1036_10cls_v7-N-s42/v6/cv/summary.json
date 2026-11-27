@@ -1,0 +1,39 @@
+{
+ "run_name": "vitb14_reg_dpt_dual_sz1036_10cls_v7-N-s42",
+ "folds": [
+  {
+   "fold": "loso_L21",
+   "val_groups": [
+    "v2021_LPBF"
+   ],
+   "n_train": 105,
+   "n_val": 20,
+   "defect_classes": [
+    "IS",
+    "PS",
+    "RS",
+    "SE",
+    "SP",
+    "DB"
+   ],
+   "wiring_match": null,
+   "total_steps": 10000,
+   "best_step": 4750,
+   "best_ema_defect_miou": 0.1708227200480238,
+   "final_ema_defect_miou": 0.16717982588293337,
+   "final_raw_defect_miou": 0.16659893464138492,
+   "final_ema_miou": 0.339550851360339,
+   "final_ema_acc": 0.903031846161005,
+   "native_defect_miou": 0.1653568750740689,
+   "native_miou": 0.3382278281928954,
+   "resized_defect_miou": 0.16718337051609936,
+   "copy_resized_defect_miou": null,
+   "v5_native_defect_miou": null,
+   "v5_resized_defect_miou": null,
+   "v4_native_defect_miou": null,
+   "v4_resized_defect_miou": null
+  }
+ ],
+ "loso_mean": null,
+ "recommendation": null
+}

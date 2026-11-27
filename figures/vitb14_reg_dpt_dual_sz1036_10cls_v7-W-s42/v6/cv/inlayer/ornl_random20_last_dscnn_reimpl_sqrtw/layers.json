@@ -1,0 +1,60 @@
+{
+ "seed": 42,
+ "builds": {
+  "B1": {
+   "file": "2021-07-13 TCR Phase 1 Build 1.hdf5",
+   "n_layers": 3575,
+   "layers": [
+    882,
+    1349,
+    1608,
+    2578
+   ],
+   "skipped": []
+  },
+  "B2": {
+   "file": "2021-04-16 TCR Phase 1 Build 2.hdf5",
+   "n_layers": 3561,
+   "layers": [
+    1302,
+    1463,
+    1977,
+    2077
+   ],
+   "skipped": []
+  },
+  "B3": {
+   "file": "2021-04-28 TCR Phase 1 Build 3.hdf5",
+   "n_layers": 3297,
+   "layers": [
+    106,
+    2677,
+    2886,
+    3236
+   ],
+   "skipped": []
+  },
+  "B4": {
+   "file": "2021-08-03 TCR Phase 1 Build 4.hdf5",
+   "n_layers": 3574,
+   "layers": [
+    600,
+    1425,
+    1768,
+    3275
+   ],
+   "skipped": []
+  },
+  "B5": {
+   "file": "2021-08-23 TCR Phase 1 Build 5.hdf5",
+   "n_layers": 3575,
+   "layers": [
+    1704,
+    2059,
+    2715,
+    3110
+   ],
+   "skipped": []
+  }
+ }
+}

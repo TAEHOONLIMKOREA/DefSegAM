@@ -1,0 +1,80 @@
+{
+ "run_name": "vitb14_reg_dpt_dual_sz1036_10cls_v7-N-s44",
+ "folds": [
+  {
+   "fold": "inlayer",
+   "val_groups": [
+    "v2021_BJ",
+    "v2021_LPBF",
+    "v2022_17-4PH",
+    "v2022_BJ_H13",
+    "v2022_GammaPrint",
+    "v2022_Inc718_1",
+    "v2022_Inc718_2",
+    "v2022_Maraging"
+   ],
+   "n_train": 103,
+   "n_val": 22,
+   "defect_classes": [
+    "IS",
+    "PS",
+    "RS",
+    "RH",
+    "SE",
+    "SP",
+    "OM",
+    "DB"
+   ],
+   "wiring_match": true,
+   "total_steps": 10000,
+   "best_step": 10000,
+   "best_ema_defect_miou": 0.5454552229575378,
+   "final_ema_defect_miou": 0.5454552229575378,
+   "final_raw_defect_miou": 0.5457177517653934,
+   "final_ema_miou": 0.6204629327093976,
+   "final_ema_acc": 0.939024307189045,
+   "native_defect_miou": 0.47000301492150637,
+   "native_miou": 0.5606440403373866,
+   "resized_defect_miou": 0.5454520004826844,
+   "copy_resized_defect_miou": null,
+   "v5_native_defect_miou": null,
+   "v5_resized_defect_miou": null,
+   "v4_native_defect_miou": null,
+   "v4_resized_defect_miou": null
+  },
+  {
+   "fold": "loso_L21",
+   "val_groups": [
+    "v2021_LPBF"
+   ],
+   "n_train": 105,
+   "n_val": 20,
+   "defect_classes": [
+    "IS",
+    "PS",
+    "RS",
+    "SE",
+    "SP",
+    "DB"
+   ],
+   "wiring_match": null,
+   "total_steps": 10000,
+   "best_step": 5750,
+   "best_ema_defect_miou": 0.18820552947829938,
+   "final_ema_defect_miou": 0.17881915274835003,
+   "final_raw_defect_miou": 0.1777594052896301,
+   "final_ema_miou": 0.3485905925119581,
+   "final_ema_acc": 0.9049081817346618,
+   "native_defect_miou": 0.17703599584910293,
+   "native_miou": 0.34728013862992735,
+   "resized_defect_miou": 0.1788216018062645,
+   "copy_resized_defect_miou": null,
+   "v5_native_defect_miou": null,
+   "v5_resized_defect_miou": null,
+   "v4_native_defect_miou": null,
+   "v4_resized_defect_miou": null
+  }
+ ],
+ "loso_mean": null,
+ "recommendation": null
+}

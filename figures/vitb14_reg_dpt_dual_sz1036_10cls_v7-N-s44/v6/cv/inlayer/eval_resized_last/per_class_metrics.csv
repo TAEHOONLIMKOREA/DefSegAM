@@ -1,0 +1,11 @@
+class,name,support_px,IoU,precision,recall,top_confused_with,confused_frac
+0,Powder,17822166,0.9269,0.9748,0.9497,5:Recoater Hopping,0.0331
+1,Printed,2061320,0.9141,0.9388,0.9720,0:Powder,0.0183
+2,Incomplete Spreading,379486,0.2864,0.8990,0.2960,0:Powder,0.6514
+3,Powder Slumping,1745690,0.9617,0.9784,0.9826,0:Powder,0.0134
+4,Recoater Streaking,45417,0.4316,0.6334,0.5754,0:Powder,0.3768
+5,Recoater Hopping,390419,0.3532,0.3690,0.8919,0:Powder,0.1067
+6,Super Elevation,88408,0.7383,0.7850,0.9255,1:Printed,0.0468
+7,Spatter,487614,0.6605,0.7477,0.8498,0:Powder,0.1307
+8,Over Melting,5076,0.5140,0.5551,0.8739,9:Debris,0.0660
+9,Debris,27049,0.4179,0.5879,0.5909,0:Powder,0.1863
