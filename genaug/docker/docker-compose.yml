@@ -1,0 +1,205 @@
+# DefSeg-AM GenAug — 결함 인페인팅 확산 모델 (PLAN_GENAUG.md §3.2)
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/genaug/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # 1) 공용 배경 캐시 (ORNL 원본 밝기 사진 + CAD 마스크. CPU, 약 10 GB) — 이미 있으면 건너뛴다
+#   GENAUG_PHASE=canvas docker compose up --build
+#
+#   # 2) 배경 점검 시트 (Q0 — 사람이 본다. CPU)
+#   GENAUG_PHASE=q0 docker compose up --build
+#
+#   # 3) 생성 모델 학습 (기본 GPU 2 · 3, 2대)
+#   GENAUG_PHASE=train docker compose up -d --build
+#   docker compose logs -f
+#   GENAUG_PHASE=train GENAUG_EXTRA=--resume docker compose up -d --build      # 끊긴 실행을 이어 돌린다
+#
+#   # 4) 표본 시트를 다시 (학습 뒤)
+#   GENAUG_PHASE=sample NVIDIA_VISIBLE_DEVICES=2 GENAUG_EXTRA="--per-class 4 --seed 7" docker compose up --build
+#
+#   # 스모크 (1 GPU, 작은 모델, 64 창, 30 step)
+#   GENAUG_PHASE=train NPROC=1 NVIDIA_VISIBLE_DEVICES=2 GENAUG_EXTRA=--quick docker compose up --build
+#
+#   # 5) 합성 세트 — 라벨 맵으로 그린 레이어 600 장 (GPU 2 · 3 으로 약 70분) → cache/genaug/sets/w600_v1/
+#   GENAUG_PHASE=synth docker compose up -d --build
+#   GENAUG_PHASE=synth GENAUG_EXTRA=--quick docker compose up --build          # 스모크 — 6 장, 8 단계
+#
+#   # 6) 합성 세트의 점검 (K1–K6: 확대 시트, 창 이음매, 분할 모델의 인식률, 진짜와 합성을 가르는 분류기) → figures/genaug/sets/w600_v1/
+#   GENAUG_PHASE=check NVIDIA_VISIBLE_DEVICES=2 docker compose up --build
+#
+# GPU 선택 (default 2,3 — GPU 0 · 1 에는 서빙 컨테이너가 있다):
+#   NVIDIA_VISIBLE_DEVICES=0,1,2,3 NPROC=4 docker compose up -d --build
+#
+# 프로젝트 이름을 따로 준다 — vN/docker 들은 폴더 이름이 같아 (docker) 한 프로젝트로 묶이고, 서로를 orphan 으로 본다.
+name: defseg-genaug
+services:
+  defseg-am-genaug:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/genaug/docker/Dockerfile
+    image: defseg-am-genaug:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않고 docker 기본 bridge 를 쓴다 (v5 · v6 와 같은 까닭 — 호스트의 주소 풀이 찼다).
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
+      # 실행 제어
+      - GENAUG_PHASE=${GENAUG_PHASE:-}           # canvas|q0|selftest|train|sample|synth|check
+      - GENAUG_EXTRA=${GENAUG_EXTRA:-}
+      - GENAUG_SET=${GENAUG_SET:-w600_v1}        # check phase 가 볼 합성 세트 (synth phase 의 이름은 GENAUG_EXTRA 의 --name)
+      - NPROC=${NPROC:-2}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (변환한 Peregrine 데이터셋 + 원본 HDF5) - read-only
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (check phase 가 분할 모델의 backbone 을 읽는다) - rw. 컨테이너 안에서는 HOME=/tmp
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "16gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[genaug] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[genaug] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.genaug_write_test" 2>/dev/null; then
+          echo "[genaug] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.genaug_write_test"
+
+        usage() {
+          echo "[genaug] GENAUG_PHASE 를 지정할 것:"
+          echo "       canvas    공용 배경 캐시를 만든다 (ORNL HDF5 → 원본 밝기 사진 + CAD 마스크. CPU, 약 10 GB). 이미 있는 빌드는 건너뛴다"
+          echo "       q0        배경 점검 시트 (사람이 본다. CPU) → figures/genaug/q0/"
+          echo "       selftest  배선 점검 (CPU, 1–2분, 학습 없음)"
+          echo "       train     생성 모델 학습 (GPU NPROC 대). GENAUG_EXTRA 예: --quick, --resume, '--normal-builds none', '--holdout inlayer'"
+          echo "       sample    학습된 모델로 표본 시트 (GPU 1대). GENAUG_EXTRA 예: '--per-class 4 --seed 7 --guidance 3'"
+          echo "       synth     합성 세트 — 라벨 맵으로 그린 레이어 (보이는 GPU 전부). GENAUG_EXTRA 예: --quick, '--name w2000_v1 --n-layers 2000', --overwrite"
+          echo "       check     합성 세트의 점검 K1–K6 (GPU 1대). 세트는 GENAUG_SET (기본 w600_v1)"
+        }
+        if [ -z "$${GENAUG_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        $$VENV_PY -c "import torch,sys; print(f'[genaug] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+        echo "[genaug] phase=$${GENAUG_PHASE} nproc=$${NPROC} extra='$${GENAUG_EXTRA}'"
+
+        DATASET=/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11
+        HDF5_DIR="/workspace/ORNL_Data/Co-Registered In-Situ and Ex-Situ Dataset/[baseline] (Peregrine v2023-11)"
+        CANVAS=$$OUT/cache/ornl_canvas_sz1036
+
+        # ── 사전조건 ──
+        need_gt() {
+          if [ ! -f "$$DATASET/index.csv" ] || [ ! -f "$$DATASET/classes.json" ]; then
+            echo "[genaug] FATAL: $$DATASET 없음 — Peregrine 주석을 pbf-2026.11 로 변환한 데이터셋." >&2
+            echo "[genaug]        v6 의 convert phase 로 만든다 (DefSeg_AM/v6/docker/README.md)" >&2
+            exit 1
+          fi
+        }
+        need_hdf5() {
+          if ! ls "$$HDF5_DIR"/*.hdf5 >/dev/null 2>&1; then
+            echo "[genaug] FATAL: $$HDF5_DIR 에 HDF5 가 없다 — 배경 캐시의 원본" >&2; exit 1
+          fi
+        }
+        need_canvas() {   # 학습에 쓰는 빌드 가운데 하나라도 캐시가 없으면 멈춘다 (--train-builds none 이면 검사하지 않는다)
+          case " $${GENAUG_EXTRA} " in *" --train-builds none "*) return 0 ;; esac
+          for b in B3 B4 B5; do
+            if [ ! -f "$$CANVAS/$$b/meta.npz" ]; then
+              echo "[genaug] FATAL: 배경 캐시 $$CANVAS/$$b 없음 — GENAUG_PHASE=canvas 를 먼저 실행 (CPU, 빌드당 몇 분)" >&2
+              echo "[genaug]        다른 빌드를 쓰려면 GENAUG_EXTRA 의 --train-builds 로 지정하고 그 빌드의 캐시를 만든다" >&2
+              exit 1
+            fi
+          done
+        }
+        need_ckpt() {
+          case " $${GENAUG_EXTRA} " in *" --ckpt "*|*" --run-name "*) return 0 ;; esac
+          if [ ! -f "$$OUT/checkpoints/genaug/fill_w256/last.pt" ]; then
+            echo "[genaug] FATAL: $$OUT/checkpoints/genaug/fill_w256/last.pt 없음 — GENAUG_PHASE=train 을 먼저 실행" >&2; exit 1
+          fi
+        }
+
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        case "$${GENAUG_PHASE}" in
+          canvas)
+            need_hdf5
+            $$VENV_PY -u -m DefSeg_AM.genaug.data.build_canvas_cache --workers 16 $${GENAUG_EXTRA}
+            $$VENV_PY -u -m DefSeg_AM.genaug.data.build_canvas_cache --verify 3
+            ;;
+          q0)
+            $$VENV_PY -u -m DefSeg_AM.genaug.checks.q0_sheet $${GENAUG_EXTRA}
+            ;;
+          selftest)
+            need_gt; need_canvas
+            $$VENV_PY -u -m DefSeg_AM.genaug.checks.selftest
+            ;;
+          train)
+            need_gt; need_canvas
+            if [ "$${NPROC}" = 1 ]; then
+              $$VENV_PY -u -m DefSeg_AM.genaug.training.train_fill $${GENAUG_EXTRA}
+            else
+              ddp -m DefSeg_AM.genaug.training.train_fill $${GENAUG_EXTRA}
+            fi
+            ;;
+          sample)
+            need_gt; need_ckpt
+            $$VENV_PY -u -m DefSeg_AM.genaug.sampling.sample_sheet $${GENAUG_EXTRA}
+            ;;
+          synth)
+            need_gt; need_canvas; need_ckpt
+            $$VENV_PY -u -m DefSeg_AM.genaug.synth.write_set $${GENAUG_EXTRA}
+            ;;
+          check)
+            need_gt; need_canvas
+            SET_DIR=$$OUT/cache/genaug/sets/$${GENAUG_SET}
+            if [ ! -f "$$SET_DIR/manifest.json" ]; then
+              echo "[genaug] FATAL: 합성 세트 $$SET_DIR 없음 (manifest.json) — GENAUG_PHASE=synth 를 먼저 실행" >&2; exit 1
+            fi
+            RUN6=vitb14_reg_dpt_dual_sz1036_10cls_v6
+            P0=$$OUT/checkpoints/$$RUN6/cv/inlayer/last.pt
+            # 기준선 가운데 L21 장비를 본 적 없는 모델 (v7 의 loso_L21 기준선, seed 42) — 있으면 함께 잰다 (K6)
+            LO=$$OUT/checkpoints/vitb14_reg_dpt_dual_sz1036_10cls_v7-N-s42/cv/loso_L21/last.pt
+            $$VENV_PY -u -m DefSeg_AM.genaug.checks.synth_sheet --set $${GENAUG_SET}
+            $$VENV_PY -u -m DefSeg_AM.genaug.checks.seam --set $${GENAUG_SET}
+            if [ -f "$$P0" ]; then
+              MODELS="p0_inlayer=$$P0"
+              if [ -f "$$LO" ]; then MODELS="$$MODELS lo_n_s42=$$LO"; fi
+              $$VENV_PY -u -m DefSeg_AM.genaug.checks.recognition --set $${GENAUG_SET} --models $$MODELS $${GENAUG_EXTRA}
+            else
+              echo "[genaug] 주의: $$P0 없음 — 인식률 (K2 · K3 · K6) 은 건너뛴다"
+            fi
+            $$VENV_PY -u -m DefSeg_AM.genaug.checks.probe --set $${GENAUG_SET}
+            ;;
+          *)
+            echo "[genaug] FATAL: unknown GENAUG_PHASE=$${GENAUG_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[genaug] phase=$${GENAUG_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다 (v5 · v6 와 같다).
+    # `deploy.resources.reservations.devices (count: all)` 블록은 넣지 않는다 — 넣으면 NVIDIA_VISIBLE_DEVICES 가 먹지 않는다.
