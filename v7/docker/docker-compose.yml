@@ -1,0 +1,275 @@
+# DefSeg-AM v7 — v6 + 합성 도메인 (PLAN_v7.md). 학습은 v7 의 스크립트, 채점 · 요약은 v6 의 모듈을 run 이름만 바꿔 부른다.
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/v7/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # 기준선 (합성 없음 — v6 와 같은 학습). 한 번에 약 2시간 (GPU 4대). PLAN_v7 §4.2 의 0단계 다섯 번은 2026-11-19 에 끝났다
+#   # (inlayer seed 43 · 44 — seed 42 는 v6 의 P0, loso_L21 seed 42 · 43 · 44). 같은 명령을 다시 주면 끝난 실행은 건너뛴다
+#   DEFSEG_V7_PHASE=cv DEFSEG_V7_RUNS="42:loso_L21 43:loso_L21 44:loso_L21 43:inlayer 44:inlayer" docker compose up -d --build
+#   docker compose logs -f
+#
+#   # 합성 세트를 넣은 실행 (꼬리표 W, 몫 0.3) — 판정 fold 둘 (inlayer · loso_L21) 을 seed 42 로. 2회, 약 4시간
+#   DEFSEG_V7_PHASE=cv DEFSEG_V7_VARIANT=W DEFSEG_V7_SYNTH_SET=w600_v1 DEFSEG_V7_RUNS="42:inlayer 42:loso_L21" docker compose up -d --build
+#   # 목록 대신 seed 만 줘도 된다: DEFSEG_V7_SEEDS="42 43"  (fold 의 기본값이 판정 fold 둘 — inlayer loso_L21 — 이다)
+#
+#   # 실행들을 한 표로 모으고 판정 (GPU 불필요)
+#   DEFSEG_V7_PHASE=compare docker compose up --build
+#
+#   # 스모크 (1 GPU, 224², 6 step)
+#   DEFSEG_V7_PHASE=cv NPROC=1 NVIDIA_VISIBLE_DEVICES=2 DEFSEG_V7_VARIANT=smoke DEFSEG_V7_SYNTH_SET=smoke24_v0 \
+#     DEFSEG_V7_EXTRA=--quick docker compose up --build
+#
+# 프로젝트 이름을 따로 준다 — v5 · v6 의 compose 는 폴더 이름이 같아 (docker) 한 프로젝트로 묶이고 서로를 orphan 으로 본다.
+name: defseg-v7
+services:
+  defseg-am-v7:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/v7/docker/Dockerfile
+    image: defseg-am-v7:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않고 docker 기본 bridge 를 쓴다 (v5 · v6 와 같은 까닭 — 호스트의 주소 풀이 찼다).
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-0,1,2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - MPLCONFIGDIR=/tmp/mplconfig
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DEFSEG_V7_PHASE=${DEFSEG_V7_PHASE:-}             # cv|train|eval|summarize|compare|ornl_compare|gt_compare
+      - DEFSEG_V7_FOLDS=${DEFSEG_V7_FOLDS:-inlayer loso_L21}   # v7 의 판정 fold 둘 (PLAN_v7 §7 의 V12)
+      - DEFSEG_V7_SEEDS=${DEFSEG_V7_SEEDS:-42}           # 여럿이면 공백으로 띄운다: "42 43 44"
+      - DEFSEG_V7_RUNS=${DEFSEG_V7_RUNS:-}               # (선택) "seed:fold" 의 목록. 주면 SEEDS × FOLDS 대신 이 목록대로 돈다: "42:inlayer 42:loso_L21"
+      - DEFSEG_V7_VARIANT=${DEFSEG_V7_VARIANT:-N}        # run 이름에 붙는 꼬리표. N = 합성 없음 (기준선)
+      - DEFSEG_V7_SYNTH_SET=${DEFSEG_V7_SYNTH_SET:-}     # 합성 세트의 이름 (cache/genaug/sets/ 아래). 비우면 합성 없음
+      - DEFSEG_V7_SYNTH_SHARE=${DEFSEG_V7_SYNTH_SHARE:-0.3}
+      - DEFSEG_V7_FORCE=${DEFSEG_V7_FORCE:-0}            # 1 = 이미 끝난 실행도 다시 돈다
+      - DEFSEG_V7_EXTRA=${DEFSEG_V7_EXTRA:-}
+      - NPROC=${NPROC:-4}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (변환한 Peregrine 데이터셋) - read-only
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 (합성 세트는 cache/genaug/sets/ 에 있다) - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (backbone weight) - rw. 컨테이너 안에서는 HOME=/tmp 이므로 /tmp/.cache/torch 에 마운트
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[v7] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[v7] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.v7_write_test" 2>/dev/null; then
+          echo "[v7] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.v7_write_test"
+
+        usage() {
+          echo "[v7] DEFSEG_V7_PHASE 를 지정할 것:"
+          echo "       cv         검증 fold 학습 → 채점 → 요약.  DEFSEG_V7_SEEDS × DEFSEG_V7_FOLDS 를 차례로 돈다 (끝난 실행은 건너뛴다)"
+          echo "                  합성 없음 (기준선): DEFSEG_V7_VARIANT=N (기본).  합성: DEFSEG_V7_VARIANT=W DEFSEG_V7_SYNTH_SET=<세트 이름>"
+          echo "       train      전수 학습 (사람 GT 125 레이어 + 합성 세트) → checkpoints/<run>/full/last.pt"
+          echo "       eval       채점만 다시 (예: DEFSEG_V7_EXTRA='--which best', '--save-figs 22') → 요약"
+          echo "       summarize  요약만 다시 (GPU 불필요)"
+          echo "       compare    실행 여럿 (꼬리표 · seed) 을 fold 마다 한 표로 모으고 판정 (GPU 불필요) → figures/v7_compare/"
+          echo "       ornl_compare  ORNL 무작위 레이어에서 DSCNN · v4 · v5 · v6 · v7 예측을 나란히 (GPU 1대, 참고용). 예: DEFSEG_V7_VARIANT=W DEFSEG_V7_EXTRA='--fold inlayer --n-per-build 4'"
+        }
+        if [ -z "$${DEFSEG_V7_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        $$VENV_PY -c "import torch,sys; print(f'[v7] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+        echo "[v7] phase=$${DEFSEG_V7_PHASE} nproc=$${NPROC} variant=$${DEFSEG_V7_VARIANT} seeds='$${DEFSEG_V7_SEEDS}' folds='$${DEFSEG_V7_FOLDS}' synth_set='$${DEFSEG_V7_SYNTH_SET}' share=$${DEFSEG_V7_SYNTH_SHARE} extra='$${DEFSEG_V7_EXTRA}'"
+
+        BACKBONE=dinov2_vitb14_reg
+        DATASET=/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11
+        SETS=$$OUT/cache/genaug/sets
+        VARIANT=$${DEFSEG_V7_VARIANT}
+        SET=$${DEFSEG_V7_SYNTH_SET}
+
+        # ── --quick 처리 (v6 의 compose 와 같다) ──
+        QUICK=0
+        case " $${DEFSEG_V7_EXTRA} " in *" --quick "*) QUICK=1 ;; esac
+        EXTRA_NOQ=$$(echo " $${DEFSEG_V7_EXTRA} " | sed 's/ --quick / /')
+        if [ "$$QUICK" = 1 ]; then
+          IMG=224; EVAL_SMOKE="--max-layers 2"
+        else
+          IMG=1036; EVAL_SMOKE=""
+        fi
+        run_name() { echo "vitb14_reg_dpt_dual_sz$${IMG}_10cls_v7-$${VARIANT}-s$$1"; }
+
+        # ── 돌 실행의 목록: "seed:fold" 들. DEFSEG_V7_RUNS 를 주면 그 목록, 아니면 SEEDS × FOLDS ──
+        if [ -n "$${DEFSEG_V7_RUNS}" ]; then
+          PAIRS="$${DEFSEG_V7_RUNS}"
+        else
+          PAIRS=""
+          for s in $${DEFSEG_V7_SEEDS}; do for f in $${DEFSEG_V7_FOLDS}; do PAIRS="$$PAIRS $$s:$$f"; done; done
+        fi
+        for p in $$PAIRS; do
+          case "$$p" in *:*) ;; *) echo "[v7] FATAL: DEFSEG_V7_RUNS 의 '$$p' 가 seed:fold 꼴이 아니다" >&2; exit 1 ;; esac
+        done
+        PAIR_SEEDS=$$(for p in $$PAIRS; do echo "$${p%%:*}"; done | sort -u | tr '\n' ' ')
+        PAIR_FOLDS=$$(for p in $$PAIRS; do echo "$${p#*:}"; done | sort -u | tr '\n' ' ')
+
+        # ── 사전조건 ──
+        need_gt() {
+          if [ ! -f "$$DATASET/index.csv" ] || [ ! -f "$$DATASET/classes.json" ]; then
+            echo "[v7] FATAL: $$DATASET 없음 — Peregrine 주석을 pbf-2026.11 로 변환한 데이터셋 (v6 의 convert phase 가 만든다)" >&2
+            exit 1
+          fi
+        }
+        check_variant() {
+          SYNTH_ARGS=""
+          if [ -n "$$SET" ]; then
+            if [ "$$VARIANT" = "N" ]; then
+              echo "[v7] FATAL: 꼬리표 N 은 합성 없는 기준선이다 — 합성 세트를 넣는 실행에는 다른 꼬리표를 준다 (예: DEFSEG_V7_VARIANT=W)" >&2; exit 1
+            fi
+            if [ ! -f "$$SETS/$$SET/index.csv" ] || [ ! -f "$$SETS/$$SET/classes.json" ]; then
+              echo "[v7] FATAL: 합성 세트 $$SETS/$$SET 없음 — genaug 가 만든다 (PLAN_v7 §2)" >&2; exit 1
+            fi
+            SYNTH_ARGS="--synth-set $$SET --synth-share $${DEFSEG_V7_SYNTH_SHARE}"
+          elif [ "$$VARIANT" != "N" ]; then
+            echo "[v7] 주의: 꼬리표가 $$VARIANT 인데 합성 세트가 없다 — DEFSEG_V7_EXTRA 로 다른 것을 바꾼 실행이 아니면 기준선과 같은 학습이다"
+          fi
+        }
+
+        # ── Backbone prefetch (DDP race 방지 — v6 와 같다) ──
+        prefetch_backbone() {
+          echo "[v7] prefetching backbone $$BACKBONE …"
+          $$VENV_PY -c "
+        from DefSeg_AM.common.models.model import DefSegModel
+        m = DefSegModel(backbone_name='$$BACKBONE', n_classes=10)
+        print('[v7] backbone prefetch OK')
+        "
+        }
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        run_train() {   # $$1 = seed, 나머지 = (없음: 전수 학습) | --fold <name>
+          seed=$$1; shift
+          if [ "$${NPROC}" != 4 ] && [ "$$QUICK" = 0 ]; then
+            echo "[v7] 주의: NPROC=$${NPROC} — effective batch 가 4 × $${NPROC} 이다 (계획값 16 = 4 GPU × 4). 기준선 · v6 와 견줄 수 없다."
+          fi
+          ddp -m DefSeg_AM.v7.training.train \
+            --backbone $$BACKBONE --batch-size 4 --num-workers 4 \
+            --seed $$seed --variant $$VARIANT $$SYNTH_ARGS "$$@" $${DEFSEG_V7_EXTRA}
+        }
+        run_eval() {    # $$1 = seed, $$2 = fold, 나머지 = evaluate 에 넘길 인자.  채점은 v6 의 evaluate 그대로다
+          seed=$$1; f=$$2; shift 2
+          RUN=$$(run_name $$seed)
+          if [ ! -f "$$OUT/checkpoints/$$RUN/cv/$$f/last.pt" ]; then
+            echo "[v7] skip eval: $$RUN 의 $$f ckpt 없음"; return 0
+          fi
+          echo "[v7] === 채점: $$RUN / $$f (원본 해상도 + $${IMG}²) ==="
+          $$VENV_PY -u -m DefSeg_AM.v6.inference.evaluate \
+            --run-name $$RUN --img-size $$IMG --fold $$f $$EVAL_SMOKE "$$@"
+        }
+        run_summarize() {   # $$1 = seed.  요약도 v6 의 스크립트 그대로다 (run 하나의 fold 들)
+          RUN=$$(run_name $$1)
+          if ls $$OUT/figures/$$RUN/v6/cv/*/curve.csv >/dev/null 2>&1; then
+            $$VENV_PY -u -m DefSeg_AM.v6.scripts.summarize_cv --run-name $$RUN --img-size $$IMG || echo "[v7] 주의: $$RUN 의 요약이 실패했다 (채점 결과는 그대로 있다)"
+          fi
+        }
+        run_compare() {
+          # 판정 fold 둘은 언제나 표로 만든다. 이번 목록에 다른 fold 가 있으면 그것도 더한다
+          CMP_FOLDS="inlayer loso_L21"
+          for f in $$PAIR_FOLDS; do
+            case " $$CMP_FOLDS " in *" $$f "*) ;; *) CMP_FOLDS="$$CMP_FOLDS $$f" ;; esac
+          done
+          $$VENV_PY -u -m DefSeg_AM.v7.scripts.compare_runs --img-size $$IMG --folds $$CMP_FOLDS "$$@" || echo "[v7] 주의: 비교 표를 만들지 못했다"
+        }
+
+        case "$${DEFSEG_V7_PHASE}" in
+          cv)
+            need_gt; check_variant; prefetch_backbone
+            echo "[v7] 돌 실행 (seed:fold): $$PAIRS"
+            n_total=0; n_done=0
+            for p in $$PAIRS; do
+              pseed=$${p%%:*}; pfold=$${p#*:}
+              RUN=$$(run_name $$pseed)
+              n_total=$$((n_total + 1))
+              if [ -f "$$OUT/checkpoints/$$RUN/cv/$$pfold/last.pt" ] && [ "$${DEFSEG_V7_FORCE}" != 1 ]; then
+                echo "[v7] === 건너뜀: $$RUN / $$pfold — 이미 끝난 실행이다 (다시 돌리려면 DEFSEG_V7_FORCE=1) ==="
+              else
+                echo "[v7] === 학습 $$n_total: $$RUN / $$pfold ==="
+                run_train $$pseed --fold $$pfold
+                n_done=$$((n_done + 1))
+              fi
+              run_eval $$pseed $$pfold
+            done
+            for s in $$PAIR_SEEDS; do run_summarize $$s; done
+            echo "[v7] 학습 $$n_done 회를 돌렸다 (대상 $$n_total)."
+            run_compare
+            ;;
+          train)
+            need_gt; check_variant; prefetch_backbone
+            for seed in $${DEFSEG_V7_SEEDS}; do
+              RUN=$$(run_name $$seed)
+              if [ -f "$$OUT/checkpoints/$$RUN/full/last.pt" ] && [ "$${DEFSEG_V7_FORCE}" != 1 ]; then
+                echo "[v7] === 건너뜀: $$RUN / full — 이미 끝난 실행이다 (다시 돌리려면 DEFSEG_V7_FORCE=1) ==="
+              else
+                echo "[v7] === 전수 학습: $$RUN ==="
+                run_train $$seed
+              fi
+            done
+            ;;
+          eval)
+            need_gt
+            for p in $$PAIRS; do run_eval $${p%%:*} $${p#*:} $$EXTRA_NOQ; done
+            for s in $$PAIR_SEEDS; do run_summarize $$s; done
+            run_compare
+            ;;
+          summarize)
+            for s in $$PAIR_SEEDS; do run_summarize $$s; done
+            ;;
+          compare)
+            run_compare $$EXTRA_NOQ
+            ;;
+          ornl_compare)
+            # ORNL 빌드의 무작위 레이어에서 DSCNN · v4 · v5 · v6 (같은 fold · seed 의 기준선) · v7 을 나란히 그린다 (참고용, GPU 1대)
+            HDF5_DIR="/workspace/ORNL_Data/Co-Registered In-Situ and Ex-Situ Dataset/[baseline] (Peregrine v2023-11)"
+            if ! ls "$$HDF5_DIR"/*.hdf5 >/dev/null 2>&1; then
+              echo "[v7] FATAL: $$HDF5_DIR 에 HDF5 가 없다" >&2; exit 1
+            fi
+            for seed in $${DEFSEG_V7_SEEDS}; do
+              $$VENV_PY -u -m DefSeg_AM.v7.scripts.compare_ornl_v7 --variant $$VARIANT --seed $$seed $$EXTRA_NOQ
+            done
+            ;;
+          gt_compare)
+            # 사람 GT 의 검증 레이어에서 정답과 v4 · v5 · v6 (같은 fold · seed 의 기준선) · v7 의 예측을 나란히 그린다 (GPU 1대)
+            need_gt
+            for seed in $${DEFSEG_V7_SEEDS}; do
+              $$VENV_PY -u -m DefSeg_AM.v7.scripts.compare_gt_v7 --variant $$VARIANT --seed $$seed $$EXTRA_NOQ
+            done
+            ;;
+          *)
+            echo "[v7] FATAL: unknown DEFSEG_V7_PHASE=$${DEFSEG_V7_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[v7] phase=$${DEFSEG_V7_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다 (v5 · v6 와 같다).
+    # `deploy.resources.reservations.devices (count: all)` 블록은 넣지 않는다 — 넣으면 NVIDIA_VISIBLE_DEVICES 가 먹지 않는다.
