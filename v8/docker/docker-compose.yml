@@ -1,0 +1,277 @@
+# DefSeg-AM v8 — v6 + 입력 사진의 전처리 (PLAN_v8.md): 소스별 밝기 맞춤 (꼬리표 B) · 조명 지도 제거 (꼬리표 BL).
+# 학습은 v7 의 스크립트, 채점 · 요약은 v6 의 모듈을 그대로 부른다 — 달라지는 것은 모델에 들어가는 사진뿐이다. 생성 데이터는 쓰지 않는다.
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/v8/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # 1) 보정 세트를 만든다 (CPU, 세트 하나에 약 4분) → cache/v8_norm/{b115, bl115}/ + 점검 표 · 시트 figures/v8_norm/
+#   DEFSEG_V8_PHASE=norm docker compose up --build
+#
+#   # 2) 0단계 — 학습 없이, 기준선 모델이 밝기 · 조명에 얼마나 민감한지 잰다 (GPU 1대) → figures/v8_check/
+#   DEFSEG_V8_PHASE=check NVIDIA_VISIBLE_DEVICES=2 docker compose up --build
+#
+#   # 3) 학습 (GPU 4대, 한 번에 약 2시간) — 판정 fold 둘을 seed 42 로. 2회, 약 4시간. 생성 데이터를 학습하지 않는다
+#   DEFSEG_V8_PHASE=cv DEFSEG_V8_VARIANT=B  DEFSEG_V8_RUNS="42:inlayer 42:loso_L21" docker compose up -d --build
+#   DEFSEG_V8_PHASE=cv DEFSEG_V8_VARIANT=BL DEFSEG_V8_RUNS="42:inlayer 42:loso_L21" docker compose up -d --build
+#   docker compose logs -f
+#
+#   # 4) 기준선과 한 표로 모으고 판정 (GPU 불필요) → figures/v8_compare/
+#   DEFSEG_V8_PHASE=compare docker compose up --build
+#
+#   # 스모크 (1 GPU, 224², 6 step)
+#   DEFSEG_V8_PHASE=cv NPROC=1 NVIDIA_VISIBLE_DEVICES=2 DEFSEG_V8_VARIANT=B DEFSEG_V8_EXTRA=--quick docker compose up --build
+#
+# 프로젝트 이름을 따로 준다 — v5 · v6 의 compose 는 폴더 이름이 같아 (docker) 한 프로젝트로 묶이고 서로를 orphan 으로 본다.
+name: defseg-v8
+services:
+  defseg-am-v8:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/v8/docker/Dockerfile
+    image: defseg-am-v8:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않고 docker 기본 bridge 를 쓴다 (v5 · v6 · v7 과 같은 까닭 — 호스트의 주소 풀이 찼다).
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-0,1,2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - MPLCONFIGDIR=/tmp/mplconfig
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DEFSEG_V8_PHASE=${DEFSEG_V8_PHASE:-}             # norm|check|cv|eval|compare
+      - DEFSEG_V8_VARIANT=${DEFSEG_V8_VARIANT:-B}        # 꼬리표 = 보정의 종류. B = 밝기 맞춤, BL = 밝기 맞춤 + 조명 제거, raw = 보정 없음 (스모크용)
+      - DEFSEG_V8_NORM_SET=${DEFSEG_V8_NORM_SET:-}       # (선택) 보정 세트의 이름. 비우면 꼬리표로 정한다: B → b115, BL → bl115, raw → raw
+      - DEFSEG_V8_NORM_MODES=${DEFSEG_V8_NORM_MODES:-B BL}   # norm phase 가 만들 세트의 종류 (공백으로 띄운다)
+      - DEFSEG_V8_FOLDS=${DEFSEG_V8_FOLDS:-inlayer loso_L21}   # 판정 fold 둘 (PLAN_v8 §4.3)
+      - DEFSEG_V8_SEEDS=${DEFSEG_V8_SEEDS:-42}           # 여럿이면 공백으로 띄운다: "42 43"
+      - DEFSEG_V8_RUNS=${DEFSEG_V8_RUNS:-}               # (선택) "seed:fold" 의 목록. 주면 SEEDS × FOLDS 대신 이 목록대로 돈다
+      - DEFSEG_V8_FORCE=${DEFSEG_V8_FORCE:-0}            # 1 = 이미 끝난 실행도 다시 돈다
+      - DEFSEG_V8_EXTRA=${DEFSEG_V8_EXTRA:-}
+      - NPROC=${NPROC:-4}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (변환한 Peregrine 데이터셋) - read-only.
+      # 보정 세트의 annotations 는 이 폴더로 가는 상대 링크다 — DefSeg_AM 과 ORNL_Data 가 호스트에서처럼 나란히 놓여야 한다 (/workspace 아래)
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 (보정 세트는 cache/v8_norm/ 에 놓인다) - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (backbone weight) - rw. 컨테이너 안에서는 HOME=/tmp 이므로 /tmp/.cache/torch 에 마운트
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[v8] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[v8] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.v8_write_test" 2>/dev/null; then
+          echo "[v8] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.v8_write_test"
+
+        usage() {
+          echo "[v8] DEFSEG_V8_PHASE 를 지정할 것:"
+          echo "       norm     보정 세트를 만든다 (CPU). DEFSEG_V8_NORM_MODES (기본 'B BL') 의 세트를 cache/v8_norm/ 에. 점검 표 · 시트는 figures/v8_norm/"
+          echo "                이미 있는 세트는 건너뛴다 (다시 만들려면 DEFSEG_V8_EXTRA=--overwrite)"
+          echo "       check    0단계 — 학습 없이, 기준선 모델에 밝기를 옮긴 사진 · 가짜 조명을 얹은 사진을 넣어 민감도를 잰다 (GPU 1대) → figures/v8_check/"
+          echo "       cv       검증 fold 학습 → 채점 → 요약 → 비교 표.  DEFSEG_V8_VARIANT=B|BL,  DEFSEG_V8_RUNS='42:inlayer 42:loso_L21' (끝난 실행은 건너뛴다)"
+          echo "       eval     채점만 다시 (예: DEFSEG_V8_EXTRA='--which best', '--save-figs 22') → 요약 → 비교 표"
+          echo "       compare  기준선 (보정 없음) 과 v8 의 실행을 fold 마다 한 표로 모으고 판정 (GPU 불필요) → figures/v8_compare/"
+        }
+        if [ -z "$${DEFSEG_V8_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        BACKBONE=dinov2_vitb14_reg
+        DATASET=/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11
+        SETS=$$OUT/cache/v8_norm
+        VARIANT=$${DEFSEG_V8_VARIANT}
+
+        # ── 꼬리표 → 보정 세트 ──
+        set_for() {
+          case "$$1" in
+            B) echo b115 ;;
+            BL) echo bl115 ;;
+            raw) echo raw ;;
+            *) echo "" ;;
+          esac
+        }
+        SET=$${DEFSEG_V8_NORM_SET}
+        if [ -z "$$SET" ]; then SET=$$(set_for "$$VARIANT"); fi
+
+        # ── --quick 처리 (v6 · v7 의 compose 와 같다) ──
+        QUICK=0
+        case " $${DEFSEG_V8_EXTRA} " in *" --quick "*) QUICK=1 ;; esac
+        EXTRA_NOQ=$$(echo " $${DEFSEG_V8_EXTRA} " | sed 's/ --quick / /')
+        if [ "$$QUICK" = 1 ]; then
+          IMG=224; EVAL_SMOKE="--max-layers 2"
+        else
+          IMG=1036; EVAL_SMOKE=""
+        fi
+        run_name() { echo "vitb14_reg_dpt_dual_sz$${IMG}_10cls_v8-$${VARIANT}-s$$1"; }
+
+        # ── 돌 실행의 목록: "seed:fold" 들. DEFSEG_V8_RUNS 를 주면 그 목록, 아니면 SEEDS × FOLDS ──
+        if [ -n "$${DEFSEG_V8_RUNS}" ]; then
+          PAIRS="$${DEFSEG_V8_RUNS}"
+        else
+          PAIRS=""
+          for s in $${DEFSEG_V8_SEEDS}; do for f in $${DEFSEG_V8_FOLDS}; do PAIRS="$$PAIRS $$s:$$f"; done; done
+        fi
+        for p in $$PAIRS; do
+          case "$$p" in *:*) ;; *) echo "[v8] FATAL: DEFSEG_V8_RUNS 의 '$$p' 가 seed:fold 꼴이 아니다" >&2; exit 1 ;; esac
+        done
+        PAIR_SEEDS=$$(for p in $$PAIRS; do echo "$${p%%:*}"; done | sort -u | tr '\n' ' ')
+        PAIR_FOLDS=$$(for p in $$PAIRS; do echo "$${p#*:}"; done | sort -u | tr '\n' ' ')
+
+        # ── 사전조건 ──
+        need_gt() {
+          if [ ! -f "$$DATASET/index.csv" ] || [ ! -f "$$DATASET/classes.json" ]; then
+            echo "[v8] FATAL: $$DATASET 없음 — Peregrine 주석을 pbf-2026.11 로 변환한 데이터셋 (v6 의 convert phase 가 만든다)" >&2
+            exit 1
+          fi
+        }
+        need_set() {
+          if [ -z "$$SET" ]; then
+            echo "[v8] FATAL: 꼬리표 '$$VARIANT' 의 보정 세트를 모른다 — DEFSEG_V8_VARIANT 를 B · BL · raw 로 주거나 DEFSEG_V8_NORM_SET 으로 세트 이름을 준다" >&2; exit 1
+          fi
+          if [ ! -f "$$SETS/$$SET/norm.json" ] || [ ! -f "$$SETS/$$SET/index.csv" ]; then
+            echo "[v8] FATAL: 보정 세트 $$SETS/$$SET 없음 — 먼저 DEFSEG_V8_PHASE=norm 으로 만든다 (CPU, 약 4분). 만든 뒤 figures/v8_norm/$$SET/ 의 점검 표와 시트를 본다" >&2
+            exit 1
+          fi
+        }
+
+        # norm 은 torch 를 쓰지 않는다 — GPU 확인 줄을 건너뛴다
+        if [ "$${DEFSEG_V8_PHASE}" != "norm" ] && [ "$${DEFSEG_V8_PHASE}" != "compare" ]; then
+          $$VENV_PY -c "import torch,sys; print(f'[v8] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+        fi
+        echo "[v8] phase=$${DEFSEG_V8_PHASE} nproc=$${NPROC} variant=$${VARIANT} norm_set='$$SET' seeds='$${DEFSEG_V8_SEEDS}' folds='$${DEFSEG_V8_FOLDS}' runs='$${DEFSEG_V8_RUNS}' extra='$${DEFSEG_V8_EXTRA}'"
+
+        # ── Backbone prefetch (DDP race 방지 — v6 와 같다) ──
+        prefetch_backbone() {
+          echo "[v8] prefetching backbone $$BACKBONE …"
+          $$VENV_PY -c "
+        from DefSeg_AM.common.models.model import DefSegModel
+        m = DefSegModel(backbone_name='$$BACKBONE', n_classes=10)
+        print('[v8] backbone prefetch OK')
+        "
+        }
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        run_train() {   # $$1 = seed, 나머지 = --fold <name>.  학습은 v7 의 것 그대로 — 껍데기가 사람 GT 의 자리만 보정 세트로 바꾼다
+          seed=$$1; shift
+          if [ "$${NPROC}" != 4 ] && [ "$$QUICK" = 0 ]; then
+            echo "[v8] 주의: NPROC=$${NPROC} — effective batch 가 4 × $${NPROC} 이다 (계획값 16 = 4 GPU × 4). 기준선과 견줄 수 없다."
+          fi
+          ddp -m DefSeg_AM.v8.training.train \
+            --norm-set $$SET --variant $$VARIANT \
+            --backbone $$BACKBONE --batch-size 4 --num-workers 4 \
+            --seed $$seed "$$@" $${DEFSEG_V8_EXTRA}
+        }
+        run_eval() {    # $$1 = seed, $$2 = fold, 나머지 = evaluate 에 넘길 인자.  채점은 v6 의 evaluate 그대로 — 같은 보정 세트의 사진으로
+          seed=$$1; f=$$2; shift 2
+          RUN=$$(run_name $$seed)
+          if [ ! -f "$$OUT/checkpoints/$$RUN/cv/$$f/last.pt" ]; then
+            echo "[v8] skip eval: $$RUN 의 $$f ckpt 없음"; return 0
+          fi
+          echo "[v8] === 채점: $$RUN / $$f (보정 세트 $$SET, 원본 해상도 + $${IMG}²) ==="
+          $$VENV_PY -u -m DefSeg_AM.v8.inference.evaluate \
+            --norm-set $$SET --run-name $$RUN --img-size $$IMG --fold $$f $$EVAL_SMOKE "$$@"
+        }
+        run_summarize() {   # $$1 = seed.  요약은 v6 의 스크립트 그대로다 (run 하나의 fold 들)
+          RUN=$$(run_name $$1)
+          if ls $$OUT/figures/$$RUN/v6/cv/*/curve.csv >/dev/null 2>&1; then
+            $$VENV_PY -u -m DefSeg_AM.v6.scripts.summarize_cv --run-name $$RUN --img-size $$IMG || echo "[v8] 주의: $$RUN 의 요약이 실패했다 (채점 결과는 그대로 있다)"
+          fi
+        }
+        run_compare() {
+          # 판정 fold 둘은 언제나 표로 만든다. 이번 목록에 다른 fold 가 있으면 그것도 더한다
+          CMP_FOLDS="inlayer loso_L21"
+          for f in $$PAIR_FOLDS; do
+            case " $$CMP_FOLDS " in *" $$f "*) ;; *) CMP_FOLDS="$$CMP_FOLDS $$f" ;; esac
+          done
+          $$VENV_PY -u -m DefSeg_AM.v8.scripts.compare_runs --img-size $$IMG --folds $$CMP_FOLDS "$$@" || echo "[v8] 주의: 비교 표를 만들지 못했다"
+        }
+
+        case "$${DEFSEG_V8_PHASE}" in
+          norm)
+            need_gt
+            OVERWRITE=0
+            case " $${DEFSEG_V8_EXTRA} " in *" --overwrite "*) OVERWRITE=1 ;; esac
+            for m in $${DEFSEG_V8_NORM_MODES}; do
+              s=$$(set_for "$$m")
+              if [ -z "$$s" ]; then
+                echo "[v8] FATAL: DEFSEG_V8_NORM_MODES 의 '$$m' 을 모른다 (B · BL · raw)" >&2; exit 1
+              fi
+              if [ -f "$$SETS/$$s/norm.json" ] && [ "$$OVERWRITE" = 0 ]; then
+                echo "[v8] === 건너뜀: 보정 세트 $$s 가 이미 있다 (다시 만들려면 DEFSEG_V8_EXTRA=--overwrite) ==="
+              else
+                echo "[v8] === 보정 세트 $$s (mode $$m) ==="
+                $$VENV_PY -u -m DefSeg_AM.v8.data.build_norm_set --mode $$m $${DEFSEG_V8_EXTRA}
+              fi
+            done
+            echo "[v8] 점검 표 · 시트: $$OUT/figures/v8_norm/<세트>/{check.md, maps.png, sheet_<소스>.png}"
+            ;;
+          check)
+            need_gt
+            $$VENV_PY -u -m DefSeg_AM.v8.scripts.sensitivity $${DEFSEG_V8_EXTRA}
+            ;;
+          cv)
+            need_gt; need_set; prefetch_backbone
+            echo "[v8] 돌 실행 (seed:fold): $$PAIRS   — 보정 세트 $$SET, 생성 데이터 없음"
+            n_total=0; n_done=0
+            for p in $$PAIRS; do
+              pseed=$${p%%:*}; pfold=$${p#*:}
+              RUN=$$(run_name $$pseed)
+              n_total=$$((n_total + 1))
+              if [ -f "$$OUT/checkpoints/$$RUN/cv/$$pfold/last.pt" ] && [ "$${DEFSEG_V8_FORCE}" != 1 ]; then
+                echo "[v8] === 건너뜀: $$RUN / $$pfold — 이미 끝난 실행이다 (다시 돌리려면 DEFSEG_V8_FORCE=1) ==="
+              else
+                echo "[v8] === 학습 $$n_total: $$RUN / $$pfold ==="
+                run_train $$pseed --fold $$pfold
+                n_done=$$((n_done + 1))
+              fi
+              run_eval $$pseed $$pfold
+            done
+            for s in $$PAIR_SEEDS; do run_summarize $$s; done
+            echo "[v8] 학습 $$n_done 회를 돌렸다 (대상 $$n_total)."
+            run_compare
+            ;;
+          eval)
+            need_gt; need_set
+            for p in $$PAIRS; do run_eval $${p%%:*} $${p#*:} $$EXTRA_NOQ; done
+            for s in $$PAIR_SEEDS; do run_summarize $$s; done
+            run_compare
+            ;;
+          compare)
+            run_compare $$EXTRA_NOQ
+            ;;
+          *)
+            echo "[v8] FATAL: unknown DEFSEG_V8_PHASE=$${DEFSEG_V8_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[v8] phase=$${DEFSEG_V8_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다 (v5 · v6 · v7 과 같다).
+    # `deploy.resources.reservations.devices (count: all)` 블록은 넣지 않는다 — 넣으면 NVIDIA_VISIBLE_DEVICES 가 먹지 않는다.
