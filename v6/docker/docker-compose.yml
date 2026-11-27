@@ -1,0 +1,270 @@
+# DefSeg-AM v6 — pbf-2026.11 10-class + 사람 GT 전용 단일 단계 학습 (v5 의 학습 방식 그대로)
+#
+# 사용 예 (.env 또는 인라인 환경변수):
+#
+#   cd DefSeg_AM/v6/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # P0 — 첫 실험 (PLAN_v6 §7.1): inlayer fold 학습 → 채점 → 기준선 (R1–R3) → 요약   (4 GPU, 약 2시간)
+#   DEFSEG_V6_PHASE=cv DEFSEG_V6_FOLDS=inlayer docker compose up -d --build
+#   docker compose logs -f
+#
+#   # 기준선만 (학습 없이 지금 낼 수 있다) / 요약만 / 채점만 다시
+#   DEFSEG_V6_PHASE=baselines docker compose up --build
+#   DEFSEG_V6_PHASE=summarize docker compose up --build
+#   DEFSEG_V6_PHASE=eval DEFSEG_V6_EXTRA="--which best --save-figs 22" docker compose up --build
+#
+#   # 전수 학습 (125 레이어, 4 GPU, 약 2시간) → ORNL 5 빌드 무작위 100 레이어에서 DSCNN · v4 · v5 · v6 비교 (1 GPU)
+#   DEFSEG_V6_PHASE=train docker compose up -d --build
+#   DEFSEG_V6_PHASE=ornl_compare NVIDIA_VISIBLE_DEVICES=2 docker compose up --build
+#
+#   # 스모크 (1 GPU, 224², 6 step)
+#   DEFSEG_V6_PHASE=cv DEFSEG_V6_FOLDS=inlayer NPROC=1 NVIDIA_VISIBLE_DEVICES=2 \
+#     DEFSEG_V6_EXTRA=--quick docker compose up --build
+#
+# GPU 선택 (default 0,1,2,3):
+#   NVIDIA_VISIBLE_DEVICES=2,3 NPROC=2 docker compose up -d --build
+#
+services:
+  defseg-am-v6:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/v6/docker/Dockerfile
+    image: defseg-am-v6:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않고 docker 기본 bridge 를 쓴다. 서비스가 하나라 전용 네트워크가 필요 없고,
+    # 호스트의 compose 네트워크가 주소 풀 (기본 31개) 을 다 쓰면 새 프로젝트는 네트워크 생성에서 실패한다.
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-0,1,2,3}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - MPLCONFIGDIR=/tmp/mplconfig
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DEFSEG_V6_PHASE=${DEFSEG_V6_PHASE:-}           # cv|summarize|eval|baselines|review|train|trainfit|infer|ornl_compare|convert
+      - DEFSEG_V6_EXTRA=${DEFSEG_V6_EXTRA:-}
+      - DEFSEG_V6_FOLDS=${DEFSEG_V6_FOLDS:-inlayer}
+      - NPROC=${NPROC:-4}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (변환한 Peregrine 데이터셋 + 참고 figure 용 원본 HDF5). 기본은 read-only.
+      # convert phase (Peregrine 주석을 다시 변환) 만 ORNL_DATA_MODE=rw 로 띄운다.
+      - ../../../ORNL_Data:/workspace/ORNL_Data:${ORNL_DATA_MODE:-ro}
+      # DefSeg_AM 소스 + 산출물 - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (backbone weight) - rw
+      # 컨테이너 안에서는 HOME=/tmp 이므로 /tmp/.cache/torch 에 마운트
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[v6] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        if [ ! -d /workspace/ORNL_Data ]; then
+          echo "[v6] FATAL: ORNL_Data 마운트 실패" >&2; exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.v6_write_test" 2>/dev/null; then
+          echo "[v6] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.v6_write_test"
+
+        usage() {
+          echo "[v6] DEFSEG_V6_PHASE 를 지정할 것:"
+          echo "       cv         검증 fold 학습 (DEFSEG_V6_FOLDS, 기본 inlayer) → 채점 → 기준선 (R1–R3) → 요약.  P0 = cv + inlayer"
+          echo "       summarize  검증 fold 요약만 다시 (GPU 불필요)"
+          echo "       eval       검증 fold 의 채점만 다시 (예: DEFSEG_V6_EXTRA='--which best', '--tta --postprocess', '--save-figs 22') → 요약"
+          echo "       baselines  기준선만: 복사 기준선 (R1) + 옛 11-class 모델 (R2 v5, R3 v4) 을 새 체계로 옮겨 채점 → 요약. 학습 전에도 낼 수 있다"
+          echo "       review     기존 IS 판정의 검토 시트 (GPU 불필요. 예: DEFSEG_V6_EXTRA=--uncertain-only)"
+          echo "       train      전수 학습 (Peregrine 주석 125 레이어) → checkpoints/<run>/full/last.pt"
+          echo "       trainfit   전수 학습 모델을 학습에 쓴 125 레이어에서 채점 (암기 정도 — 성능이 아니다) → figures/<run>/v6/full/trainfit_*"
+          echo "       infer      ORNL figure (참고용. 기본은 전수 학습 모델, DEFSEG_V6_EXTRA='--fold inlayer' 로 fold 모델)"
+          echo "       ornl_compare  ORNL 5 빌드에서 무작위로 뽑은 레이어 (기본 빌드마다 20) 에서 DSCNN · v4 · v5 · v6 예측을 나란히 (참고용)"
+          echo "       convert    Peregrine 주석을 다시 변환 (판정표 · 매핑을 고친 뒤). ORNL_DATA_MODE=rw 와 함께 띄운다"
+          echo "     (build_cache · split 은 DIVA 내보내기가 온 뒤 P1 에서 만든다 — 아직 없다)"
+        }
+        if [ -z "$${DEFSEG_V6_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        $$VENV_PY -c "import torch,sys; print(f'[v6] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+
+        echo "[v6] phase=$${DEFSEG_V6_PHASE} nproc=$${NPROC} folds='$${DEFSEG_V6_FOLDS}' extra='$${DEFSEG_V6_EXTRA}'"
+
+        BACKBONE=dinov2_vitb14_reg
+        DATASET=/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11
+        V5_RUN=vitb14_reg_dpt_dual_sz1036_11cls_v5
+        V4_CKPT=$$OUT/checkpoints/vitb14_reg_dpt_dual_sz1036_11cls_v4/stage2_best.pt
+
+        # ── --quick 처리 ──
+        # train.py 의 --quick 은 224² 로 돌리고 run-name 도 sz224 가 된다. 채점 · 요약 단계는 --quick 을
+        # 모르므로 여기서 같은 run 을 가리키게 하고 표본 수를 줄인다.
+        QUICK=0
+        case " $${DEFSEG_V6_EXTRA} " in *" --quick "*) QUICK=1 ;; esac
+        EXTRA_NOQ=$$(echo " $${DEFSEG_V6_EXTRA} " | sed 's/ --quick / /')
+        if [ "$$QUICK" = 1 ]; then
+          IMG=224; EVAL_SMOKE="--max-layers 2"; INFER_SMOKE="--n-layers 1"; COMPARE_SMOKE="--builds B1 --n-per-build 2 --workers 2"
+        else
+          IMG=1036; EVAL_SMOKE=""; INFER_SMOKE=""; COMPARE_SMOKE=""
+        fi
+        RUN=vitb14_reg_dpt_dual_sz$${IMG}_10cls_v6
+
+        # ── 사전조건 ──
+        need_gt() {
+          if [ ! -f "$$DATASET/index.csv" ] || [ ! -f "$$DATASET/classes.json" ]; then
+            echo "[v6] FATAL: $$DATASET 없음 — Peregrine 주석을 pbf-2026.11 로 변환한 데이터셋 (학습 데이터)." >&2
+            echo "[v6]        DEFSEG_V6_PHASE=convert ORNL_DATA_MODE=rw 로 만든다 (CPU, 약 3분. README 참조)" >&2
+            exit 1
+          fi
+        }
+        need_full_ckpt() {
+          if [ ! -f "$$OUT/checkpoints/$$RUN/full/last.pt" ]; then
+            echo "[v6] FATAL: $$OUT/checkpoints/$$RUN/full/last.pt 없음 — DEFSEG_V6_PHASE=train 을 먼저 실행 (fold 모델로 그리려면 DEFSEG_V6_EXTRA='--fold inlayer')" >&2; exit 1
+          fi
+        }
+
+        # ── Backbone prefetch (DDP race 방지) ──
+        # 4-rank 가 동시에 torch.hub.load() 하면 cache 추출/삭제 race condition 발생.
+        prefetch_backbone() {
+          echo "[v6] prefetching backbone $$BACKBONE …"
+          $$VENV_PY -c "
+        from DefSeg_AM.common.models.model import DefSegModel
+        m = DefSegModel(backbone_name='$$BACKBONE', n_classes=10)
+        print('[v6] backbone prefetch OK')
+        "
+        }
+
+        ddp() {
+          $$VENV_PY -u -m torch.distributed.run \
+            --nproc_per_node=$${NPROC} --standalone "$$@"
+        }
+
+        run_train() {   # $$@ = (없음: 전수 학습) | --fold <name>
+          if [ "$${NPROC}" != 4 ] && [ "$$QUICK" = 0 ]; then
+            echo "[v6] 주의: NPROC=$${NPROC} — effective batch 가 4 × $${NPROC} 이다 (계획값 16 = 4 GPU × 4)."
+          fi
+          ddp -m DefSeg_AM.v6.training.train \
+            --backbone $$BACKBONE --batch-size 4 --num-workers 4 \
+            "$$@" $${DEFSEG_V6_EXTRA}
+        }
+        run_eval_folds() {   # $$@ = evaluate 에 넘길 추가 인자
+          for f in $${DEFSEG_V6_FOLDS}; do
+            if [ ! -f "$$OUT/checkpoints/$$RUN/cv/$$f/last.pt" ]; then
+              echo "[v6] skip eval: $$f 의 ckpt 없음"; continue
+            fi
+            echo "[v6] === 채점: $$f (v6, 원본 해상도 + $${IMG}²) ==="
+            $$VENV_PY -u -m DefSeg_AM.v6.inference.evaluate \
+              --img-size $$IMG --fold $$f $$EVAL_SMOKE "$$@"
+          done
+        }
+        run_baseline_folds() {
+          for f in $${DEFSEG_V6_FOLDS}; do
+            echo "[v6] === 기준선 R1: $$f (복사 기준선 — 같은 소스의 가장 비슷한 학습 레이어의 정답) ==="
+            $$VENV_PY -u -m DefSeg_AM.v6.inference.baselines copy \
+              --img-size $$IMG --fold $$f $$EVAL_SMOKE
+            V5_CKPT=$$OUT/checkpoints/$$V5_RUN/cv/$$f/last.pt
+            if [ -f "$$V5_CKPT" ]; then
+              echo "[v6] === 기준선 R2: $$f (같은 fold 의 v5 모델을 새 id 로 옮겨 채점) ==="
+              $$VENV_PY -u -m DefSeg_AM.v6.inference.baselines old \
+                --img-size $$IMG --fold $$f --checkpoint "$$V5_CKPT" --tag-prefix ref_v5 $$EVAL_SMOKE
+            else
+              echo "[v6] v5 의 같은 fold ckpt 없음 ($$V5_CKPT) — R2 생략"
+            fi
+            if [ -f "$$V4_CKPT" ]; then
+              echo "[v6] === 기준선 R3: $$f (v4 를 새 id 로 옮겨 채점 — v4 는 이 표본을 학습에 썼다) ==="
+              $$VENV_PY -u -m DefSeg_AM.v6.inference.baselines old \
+                --img-size $$IMG --fold $$f --checkpoint "$$V4_CKPT" --tag-prefix ref_v4 $$EVAL_SMOKE
+            else
+              echo "[v6] v4 ckpt 없음 ($$V4_CKPT) — R3 생략"
+            fi
+          done
+        }
+        run_summarize() {
+          if ls $$OUT/figures/$$RUN/v6/cv/*/curve.csv >/dev/null 2>&1; then
+            $$VENV_PY -u -m DefSeg_AM.v6.scripts.summarize_cv --img-size $$IMG
+          else
+            echo "[v6] 요약 생략 — 학습이 끝난 fold 가 아직 없다 (기준선의 결과는 figures/$$RUN/v6/cv/<fold>/ref_*/metrics.json 에 있다)"
+          fi
+        }
+        run_cv() {
+          need_gt
+          prefetch_backbone
+          for f in $${DEFSEG_V6_FOLDS}; do
+            echo "[v6] === 검증 fold 학습: $$f ==="
+            run_train --fold $$f
+          done
+          run_eval_folds
+          run_baseline_folds
+          run_summarize
+        }
+
+        case "$${DEFSEG_V6_PHASE}" in
+          cv)         run_cv ;;
+          summarize)  run_summarize ;;
+          eval)       need_gt; run_eval_folds $$EXTRA_NOQ; run_summarize ;;
+          baselines)  need_gt; run_baseline_folds; run_summarize ;;
+          review)
+            need_gt
+            $$VENV_PY -u -m DefSeg_AM.v6.scripts.review_legacy $$EXTRA_NOQ
+            ;;
+          train)      need_gt; prefetch_backbone; run_train ;;
+          trainfit)
+            # 전수 학습 모델이 학습에 쓴 레이어를 얼마나 맞히는가 — 암기 정도이지 성능이 아니다 (검증을 떼지 않은 모델이 멀쩡한지 보는 용도).
+            # 결과는 figures/<run>/v6/full/trainfit_{native,resized}_last 에 쓴다.
+            need_gt; need_full_ckpt
+            $$VENV_PY -u -m DefSeg_AM.v6.inference.evaluate --img-size $$IMG --tag-prefix trainfit $$EVAL_SMOKE $$EXTRA_NOQ
+            ;;
+          infer)
+            case " $${DEFSEG_V6_EXTRA} " in
+              *" --fold "*|*" --checkpoint "*) ;;
+              *) need_full_ckpt ;;
+            esac
+            $$VENV_PY -u -m DefSeg_AM.v6.inference.infer --img-size $$IMG $$INFER_SMOKE $$EXTRA_NOQ
+            ;;
+          ornl_compare)
+            # 사람 GT 가 없는 빌드라 점수가 아니라 모델끼리의 비교다. v4 · v5 ckpt 가 없으면 그 열만 빠진다.
+            case " $${DEFSEG_V6_EXTRA} " in
+              *" --fold "*|*" --checkpoint "*) ;;
+              *) need_full_ckpt ;;
+            esac
+            $$VENV_PY -u -m DefSeg_AM.v6.inference.compare_ornl --img-size $$IMG $$COMPARE_SMOKE $$EXTRA_NOQ
+            ;;
+          convert)
+            if ! touch /workspace/ORNL_Data/.v6_write_test 2>/dev/null; then
+              echo "[v6] FATAL: ORNL_Data 가 read-only 다 — convert 는 ORNL_DATA_MODE=rw 와 함께 띄운다" >&2; exit 1
+            fi
+            rm -f /workspace/ORNL_Data/.v6_write_test
+            if [ ! -d /workspace/ORNL_Data/DSCNN_Dataset ]; then
+              echo "[v6] FATAL: /workspace/ORNL_Data/DSCNN_Dataset 없음 — 변환의 원본 (Peregrine 사람 주석)" >&2; exit 1
+            fi
+            $$VENV_PY -u -m DefSeg_AM.v6.data.convert_legacy $$EXTRA_NOQ
+            ;;
+          build_cache|split)
+            echo "[v6] FATAL: $${DEFSEG_V6_PHASE} 는 아직 없다 — DIVA 내보내기가 온 뒤 P1 에서 만든다 (PLAN_v6 §10)" >&2
+            exit 1
+            ;;
+          *)
+            echo "[v6] FATAL: unknown DEFSEG_V6_PHASE=$${DEFSEG_V6_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[v6] phase=$${DEFSEG_V6_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다.
+    # v3 · v4 의 compose 에 있는 `deploy.resources.reservations.devices (count: all)` 블록은 넣지 않는다 —
+    # 그 블록이 있으면 컨테이너 안의 NVIDIA_VISIBLE_DEVICES 가 all 로 덮여서, 무엇을 지정하든 GPU 4개가 다 보이고
+    # NPROC 개의 프로세스가 항상 GPU 0 부터 올라간다 (2026-11-16 에 nvidia-smi -L 로 확인).
