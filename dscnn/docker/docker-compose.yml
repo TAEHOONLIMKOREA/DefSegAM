@@ -1,0 +1,167 @@
+# DSCNN 재구현 — 사람 GT 만으로 학습해 DefSeg-AM (v4 – v7) 과 같은 검증 레이어에서 견준다 (GPU 1대).
+#
+# 사용 예:
+#
+#   cd DefSeg_AM/dscnn/docker
+#   echo "UID_GID=$(id -u):$(id -g)" > .env        # 최초 1회
+#
+#   # inlayer fold 학습 → 채점 (원본 해상도 + 1036²). 학습 길이는 README 참조
+#   DSCNN_PHASE=cv docker compose up -d --build
+#   docker compose logs -f
+#
+#   # 정답 · DSCNN 재구현 · v4 · v5 · v6 · v7 을 나란히 (그림 + 표)
+#   DSCNN_PHASE=compare docker compose up --build
+#
+#   # 스모크 (30 step) / 자체 점검 (데이터 없이 CPU 몇 초)
+#   DSCNN_PHASE=cv DSCNN_EXTRA=--quick docker compose up --build --exit-code-from defseg-dscnn
+#   DSCNN_PHASE=selftest docker compose up --build
+#
+# GPU 는 한 대만 쓴다 (기본 2 번 — 0 · 1 번에는 서빙 컨테이너가 있다): NVIDIA_VISIBLE_DEVICES=3 …
+name: defseg-dscnn
+services:
+  defseg-dscnn:
+    build:
+      context: ../../..       # repo root
+      dockerfile: DefSeg_AM/dscnn/docker/Dockerfile
+    image: defseg-dscnn:gpu
+    runtime: nvidia
+    user: "${UID_GID:-1000:1000}"
+    restart: "no"
+    # 프로젝트 전용 네트워크를 만들지 않는다 (v5 – v7 과 같은 까닭 — 호스트의 주소 풀이 찼다).
+    network_mode: bridge
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-2}
+      - PYTHONPATH=/workspace
+      - HOME=/tmp
+      - MPLCONFIGDIR=/tmp/mplconfig
+      - HDF5_USE_FILE_LOCKING=FALSE
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      # 실행 제어
+      - DSCNN_PHASE=${DSCNN_PHASE:-}                 # selftest|cv|train|eval|compare|ornl_compare
+      - DSCNN_FOLDS=${DSCNN_FOLDS:-inlayer}          # v6 과 같은 fold 이름. 여럿이면 공백으로 띄운다
+      - DSCNN_SEED=${DSCNN_SEED:-42}
+      - DSCNN_TAG=${DSCNN_TAG:-}                     # run 이름에 붙는 꼬리표 (설정을 바꾼 실행을 가를 때)
+      - DSCNN_EXTRA=${DSCNN_EXTRA:-}
+    volumes:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # host venv (DefSeg_AM/venv) - read-only
+      - ../../venv:/workspace/DefSeg_AM/venv:ro
+      # ORNL_Data (변환한 Peregrine 데이터셋) - read-only
+      - ../../../ORNL_Data:/workspace/ORNL_Data:ro
+      # DefSeg_AM 소스 + 산출물 - rw
+      - ../..:/workspace/DefSeg_AM:rw
+      # 호스트 torch hub cache (compare 가 v4 – v7 의 backbone 을 읽는다) - rw
+      - ${HOME}/.cache/torch:/tmp/.cache/torch:rw
+    shm_size: "8gb"
+    working_dir: /workspace
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        VENV_PY=/workspace/DefSeg_AM/venv/bin/python
+        if [ ! -x "$$VENV_PY" ]; then
+          echo "[dscnn] FATAL: $$VENV_PY 없음 — host venv 마운트 확인" >&2
+          exit 1
+        fi
+        OUT=/workspace/DefSeg_AM
+        if ! touch "$$OUT/.dscnn_write_test" 2>/dev/null; then
+          echo "[dscnn] FATAL: $$OUT 쓰기 실패 — UID/권한 확인 (docker/.env 의 UID_GID)" >&2; exit 1
+        fi
+        rm -f "$$OUT/.dscnn_write_test"
+
+        usage() {
+          echo "[dscnn] DSCNN_PHASE 를 지정할 것:"
+          echo "       selftest   자체 점검 (데이터 · GPU 없이 몇 초)"
+          echo "       cv         검증 fold 학습 (DSCNN_FOLDS, 기본 inlayer) → 채점 (원본 해상도 + 1036²)"
+          echo "       train      125 레이어 전수 학습 (검증 없음)"
+          echo "       eval       검증 fold 의 채점만 다시 (예: DSCNN_EXTRA='--which best --save-figs 22')"
+          echo "       compare    사람 GT 의 검증 레이어에서 정답 · DSCNN 재구현 · v4 · v5 · v6 · v7 을 나란히 (그림 + 표)"
+          echo "       ornl_compare  ORNL 5 빌드의 무작위 레이어에서 DSCNN (ORNL 배포 예측) · DSCNN 재구현 · v4 · v5 · v6 · v7 을 나란히 (사람 GT 없음 — 참고용)"
+        }
+        if [ -z "$${DSCNN_PHASE}" ]; then
+          usage >&2; exit 1
+        fi
+
+        $$VENV_PY -c "import torch,sys; print(f'[dscnn] python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.cuda.is_available()} devs={torch.cuda.device_count()}')"
+        echo "[dscnn] phase=$${DSCNN_PHASE} folds='$${DSCNN_FOLDS}' seed=$${DSCNN_SEED} tag='$${DSCNN_TAG}' extra='$${DSCNN_EXTRA}'"
+
+        DATASET=/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11
+        need_gt() {
+          if [ ! -f "$$DATASET/index.csv" ] || [ ! -f "$$DATASET/classes.json" ]; then
+            echo "[dscnn] FATAL: $$DATASET 없음 — Peregrine 주석을 pbf-2026.11 로 변환한 데이터셋 (v6/docker 의 convert phase 로 만든다)" >&2
+            exit 1
+          fi
+        }
+
+        # ── --quick: 학습 스크립트가 꼬리표를 quick 으로 바꾸므로 채점도 같은 run 을 가리키게 한다 ──
+        QUICK=0
+        case " $${DSCNN_EXTRA} " in *" --quick "*) QUICK=1 ;; esac
+        EXTRA_NOQ=$$(echo " $${DSCNN_EXTRA} " | sed 's/ --quick / /')
+        TAG="$${DSCNN_TAG}"
+        EVAL_SMOKE=""
+        if [ "$$QUICK" = 1 ]; then
+          if [ -z "$$TAG" ]; then TAG=quick; fi
+          EVAL_SMOKE="--max-layers 3"
+        fi
+        TAG_ARG=""
+        if [ -n "$$TAG" ]; then TAG_ARG="--tag $$TAG"; fi
+        if [ -n "$$TAG" ]; then RUN=dscnn_native_10cls_gt-$$TAG-s$${DSCNN_SEED}; else RUN=dscnn_native_10cls_gt-s$${DSCNN_SEED}; fi
+
+        run_eval_folds() {   # $$@ = evaluate 에 넘길 추가 인자
+          for f in $${DSCNN_FOLDS}; do
+            if [ ! -f "$$OUT/checkpoints/$$RUN/cv/$$f/last.pt" ]; then
+              echo "[dscnn] skip eval: $$f 의 ckpt 없음 ($$RUN)"; continue
+            fi
+            echo "[dscnn] === 채점: $$f (원본 해상도 + 1036²) ==="
+            $$VENV_PY -u -m DefSeg_AM.dscnn.inference.evaluate --fold $$f --seed $${DSCNN_SEED} $$TAG_ARG $$EVAL_SMOKE "$$@"
+          done
+        }
+
+        case "$${DSCNN_PHASE}" in
+          selftest)
+            $$VENV_PY -u -m DefSeg_AM.dscnn.checks.selftest
+            ;;
+          cv)
+            need_gt
+            for f in $${DSCNN_FOLDS}; do
+              echo "[dscnn] === 검증 fold 학습: $$f (사람 GT 만, 생성 데이터 · DSCNN 예측 없음) ==="
+              $$VENV_PY -u -m DefSeg_AM.dscnn.training.train --fold $$f --seed $${DSCNN_SEED} $$TAG_ARG $${DSCNN_EXTRA}
+            done
+            run_eval_folds
+            ;;
+          train)
+            need_gt
+            $$VENV_PY -u -m DefSeg_AM.dscnn.training.train --seed $${DSCNN_SEED} $$TAG_ARG $${DSCNN_EXTRA}
+            ;;
+          eval)
+            need_gt
+            run_eval_folds $$EXTRA_NOQ
+            ;;
+          compare)
+            need_gt
+            for f in $${DSCNN_FOLDS}; do
+              $$VENV_PY -u -m DefSeg_AM.dscnn.scripts.compare_gt --fold $$f --seed $${DSCNN_SEED} $$TAG_ARG $$EVAL_SMOKE $$EXTRA_NOQ
+            done
+            ;;
+          ornl_compare)
+            HDF5_DIR="/workspace/ORNL_Data/Co-Registered In-Situ and Ex-Situ Dataset/[baseline] (Peregrine v2023-11)"
+            if [ ! -d "$$HDF5_DIR" ]; then
+              echo "[dscnn] FATAL: $$HDF5_DIR 없음 — ORNL Co-Registered HDF5 (사진과 ORNL 의 DSCNN 예측을 읽는다)" >&2
+              exit 1
+            fi
+            ORNL_SMOKE=""
+            if [ "$$QUICK" = 1 ]; then ORNL_SMOKE="--n-per-build 1 --builds B1"; fi
+            for f in $${DSCNN_FOLDS}; do
+              $$VENV_PY -u -m DefSeg_AM.dscnn.scripts.compare_ornl --fold $$f --seed $${DSCNN_SEED} $$TAG_ARG $$ORNL_SMOKE $$EXTRA_NOQ
+            done
+            ;;
+          *)
+            echo "[dscnn] FATAL: unknown DSCNN_PHASE=$${DSCNN_PHASE}" >&2
+            usage >&2
+            exit 1
+            ;;
+        esac
+        echo "[dscnn] phase=$${DSCNN_PHASE} done."
+    # GPU 는 `runtime: nvidia` + NVIDIA_VISIBLE_DEVICES 로만 고른다 (deploy.resources 블록을 넣지 않는다 — v5 – v7 과 같은 까닭).
