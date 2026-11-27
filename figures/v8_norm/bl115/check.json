@@ -1,0 +1,422 @@
+{
+ "name": "bl115",
+ "mode": "BL",
+ "sources": {
+  "v2021_LPBF": {
+   "short": "L21",
+   "n_layers": 20,
+   "powder_frac": 0.7582488263797682,
+   "brightness": 98.0,
+   "shift_applied": 17.0,
+   "map_applied": true,
+   "clipped_pct": 0.5155489668175143,
+   "free_sd_pct": 2.0985612091316104,
+   "free_r2": 0.8282388421496153,
+   "gates": {
+    "S1_layers": true,
+    "S2_size": true,
+    "S3_smooth": true
+   },
+   "use_map": true,
+   "powder_median_before": [
+    97.5,
+    98.5
+   ],
+   "powder_median_after": [
+    114.5,
+    115.0
+   ],
+   "powder_layer_range_after": [
+    [
+     99.0,
+     123.0
+    ],
+    [
+     100.0,
+     122.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    2.912343825775317,
+    1.910884168108456
+   ],
+   "lab_sd_pct_after": [
+    0.8089157368961365,
+    0.19218307819558625
+   ],
+   "corr_free_vs_label": 0.9920672534201946,
+   "lab_sd_levels_before": [
+    2.839535230130934,
+    1.8822209055868293
+   ],
+   "lab_sd_levels_after": [
+    0.9262085187460762,
+    0.22101053992492417
+   ]
+  },
+  "v2022_17-4PH": {
+   "short": "17-4",
+   "n_layers": 14,
+   "powder_frac": 0.6761454992730002,
+   "brightness": 154.0,
+   "shift_applied": -39.0,
+   "map_applied": false,
+   "clipped_pct": 0.012380419994487852,
+   "free_sd_pct": 2.6373082673548054,
+   "free_r2": 0.6666034255522658,
+   "gates": {
+    "S1_layers": true,
+    "S2_size": true,
+    "S3_smooth": false
+   },
+   "use_map": false,
+   "powder_median_before": [
+    153.5,
+    155.5
+   ],
+   "powder_median_after": [
+    114.5,
+    116.5
+   ],
+   "powder_layer_range_after": [
+    [
+     102.0,
+     128.0
+    ],
+    [
+     105.0,
+     128.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    4.227449298795878,
+    2.8830362358544868
+   ],
+   "lab_sd_pct_after": [
+    5.733494046238941,
+    3.890005050331941
+   ],
+   "corr_free_vs_label": 0.9816477693587348,
+   "lab_sd_levels_before": [
+    6.489134673651672,
+    4.483121346753727
+   ],
+   "lab_sd_levels_after": [
+    6.564850682943587,
+    4.5318558836367115
+   ]
+  },
+  "v2022_GammaPrint": {
+   "short": "GP",
+   "n_layers": 9,
+   "powder_frac": 0.8421532593777441,
+   "brightness": 129.0,
+   "shift_applied": -14.0,
+   "map_applied": false,
+   "clipped_pct": 0.0,
+   "free_sd_pct": 6.71613805815624,
+   "free_r2": 0.5961175868342465,
+   "gates": {
+    "S1_layers": false,
+    "S2_size": true,
+    "S3_smooth": false
+   },
+   "use_map": false,
+   "powder_median_before": [
+    129.0,
+    127.0
+   ],
+   "powder_median_after": [
+    115.0,
+    113.0
+   ],
+   "powder_layer_range_after": [
+    [
+     113.0,
+     117.0
+    ],
+    [
+     112.0,
+     115.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    6.045909583025632,
+    6.496745357728813
+   ],
+   "lab_sd_pct_after": [
+    6.76846533180637,
+    7.281908932273233
+   ],
+   "corr_free_vs_label": 0.9947873842448411,
+   "lab_sd_levels_before": [
+    7.799223362103065,
+    8.250866604315592
+   ],
+   "lab_sd_levels_after": [
+    7.783735131577325,
+    8.228557093468755
+   ]
+  },
+  "v2022_Inc718_1": {
+   "short": "I1",
+   "n_layers": 5,
+   "powder_frac": 0.6950502368475096,
+   "brightness": 140.0,
+   "shift_applied": -25.0,
+   "map_applied": false,
+   "clipped_pct": 0.0,
+   "free_sd_pct": 1.0652208207699725,
+   "free_r2": 0.5399908535914887,
+   "gates": {
+    "S1_layers": false,
+    "S2_size": true,
+    "S3_smooth": false
+   },
+   "use_map": false,
+   "powder_median_before": [
+    140.0,
+    140.0
+   ],
+   "powder_median_after": [
+    115.0,
+    115.0
+   ],
+   "powder_layer_range_after": [
+    [
+     114.0,
+     116.0
+    ],
+    [
+     113.0,
+     115.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    1.8711313000320398,
+    0.6963680831388196
+   ],
+   "lab_sd_pct_after": [
+    2.279100192808756,
+    0.8492931946613811
+   ],
+   "corr_free_vs_label": 0.9355159381303979,
+   "lab_sd_levels_before": [
+    2.6195838200448556,
+    0.9749153163943474
+   ],
+   "lab_sd_levels_after": [
+    2.62096522173007,
+    0.9766871738605883
+   ]
+  },
+  "v2022_Inc718_2": {
+   "short": "I2",
+   "n_layers": 24,
+   "powder_frac": 0.8747801366921593,
+   "brightness": 141.0,
+   "shift_applied": -26.0,
+   "map_applied": false,
+   "clipped_pct": 5.710735268587301e-05,
+   "free_sd_pct": 4.377913400337946,
+   "free_r2": 0.49166151095185406,
+   "gates": {
+    "S1_layers": true,
+    "S2_size": true,
+    "S3_smooth": false
+   },
+   "use_map": false,
+   "powder_median_before": [
+    140.0,
+    140.0
+   ],
+   "powder_median_after": [
+    114.0,
+    114.0
+   ],
+   "powder_layer_range_after": [
+    [
+     109.0,
+     118.0
+    ],
+    [
+     110.0,
+     117.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    3.8505748121484356,
+    3.9592025272541758
+   ],
+   "lab_sd_pct_after": [
+    4.742779198468084,
+    4.8812430371388205
+   ],
+   "corr_free_vs_label": 0.9949096439021582,
+   "lab_sd_levels_before": [
+    5.39080473700781,
+    5.542883538155846
+   ],
+   "lab_sd_levels_after": [
+    5.406768286253616,
+    5.564617062338256
+   ]
+  },
+  "v2022_Maraging": {
+   "short": "MS",
+   "n_layers": 26,
+   "powder_frac": 0.5343292474255954,
+   "brightness": 55.0,
+   "shift_applied": 60.0,
+   "map_applied": false,
+   "clipped_pct": 0.01458906997420404,
+   "free_sd_pct": 4.898699660204055,
+   "free_r2": 0.4343540761259228,
+   "gates": {
+    "S1_layers": true,
+    "S2_size": true,
+    "S3_smooth": false
+   },
+   "use_map": false,
+   "powder_median_before": [
+    57.5,
+    60.0
+   ],
+   "powder_median_after": [
+    117.5,
+    120.0
+   ],
+   "powder_layer_range_after": [
+    [
+     110.0,
+     121.0
+    ],
+    [
+     114.0,
+     125.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    1.5886083960157473,
+    0.9152705748857136
+   ],
+   "lab_sd_pct_after": [
+    0.7803092145611706,
+    0.44992729318942876
+   ],
+   "corr_free_vs_label": 0.15466326832536256,
+   "lab_sd_levels_before": [
+    0.9134498277090547,
+    0.5491623449314281
+   ],
+   "lab_sd_levels_after": [
+    0.9168633271093755,
+    0.5399127518273145
+   ]
+  },
+  "v2021_BJ": {
+   "short": "BJ21",
+   "n_layers": 20,
+   "powder_frac": 0.7324174982822387,
+   "brightness": 112.0,
+   "shift_applied": 3.0,
+   "map_applied": true,
+   "clipped_pct": 0.04008541540885332,
+   "free_sd_pct": 1.3211130730490765,
+   "free_r2": 0.745886408330772,
+   "gates": {
+    "S1_layers": true,
+    "S2_size": true,
+    "S3_smooth": true
+   },
+   "use_map": true,
+   "powder_median_before": [
+    113.0,
+    114.0
+   ],
+   "powder_median_after": [
+    115.5,
+    116.0
+   ],
+   "powder_layer_range_after": [
+    [
+     95.0,
+     176.0
+    ],
+    [
+     95.0,
+     184.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    1.1591701612563587,
+    1.1563651108897353
+   ],
+   "lab_sd_pct_after": [
+    0.1647618057622983,
+    0.09754847611395835
+   ],
+   "corr_free_vs_label": 0.9908786398742918,
+   "lab_sd_levels_before": [
+    1.3098622822196853,
+    1.318256226414298
+   ],
+   "lab_sd_levels_after": [
+    0.19029988565545453,
+    0.11315623229219168
+   ]
+  },
+  "v2022_BJ_H13": {
+   "short": "H13",
+   "n_layers": 7,
+   "powder_frac": 0.746222901575946,
+   "brightness": 100.0,
+   "shift_applied": 15.0,
+   "map_applied": false,
+   "clipped_pct": 0.007653371191658825,
+   "free_sd_pct": 3.145625147241251,
+   "free_r2": 0.712528409219958,
+   "gates": {
+    "S1_layers": false,
+    "S2_size": true,
+    "S3_smooth": true
+   },
+   "use_map": false,
+   "powder_median_before": [
+    100.0,
+    101.0
+   ],
+   "powder_median_after": [
+    115.0,
+    116.0
+   ],
+   "powder_layer_range_after": [
+    [
+     110.0,
+     129.0
+    ],
+    [
+     111.0,
+     131.0
+    ]
+   ],
+   "lab_sd_pct_before": [
+    0.5621235336916175,
+    4.051368480157844
+   ],
+   "lab_sd_pct_after": [
+    0.4880125284016265,
+    3.532006497567788
+   ],
+   "corr_free_vs_label": 0.9859590987433936,
+   "lab_sd_levels_before": [
+    0.5621235336916175,
+    4.091882164959422
+   ],
+   "lab_sd_levels_after": [
+    0.5612144076618705,
+    4.0971275371786335
+   ]
+  }
+ }
+}

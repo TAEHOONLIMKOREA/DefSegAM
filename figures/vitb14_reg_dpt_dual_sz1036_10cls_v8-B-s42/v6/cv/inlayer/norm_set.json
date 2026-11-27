@@ -1,0 +1,277 @@
+{
+ "norm_set": "b115",
+ "root": "/workspace/DefSeg_AM/cache/v8_norm/b115",
+ "norm": {
+  "name": "b115",
+  "version": "v8",
+  "mode": "B",
+  "ref_brightness": 115.0,
+  "formula": "out = round(photo / light_map + shift), clipped to 0..255; light_map only where sources[*].applied.map is true",
+  "created_at": "2026-11-25T06:47:48+0000",
+  "source_root": "/workspace/ORNL_Data/DSCNN_Dataset_pbf-2026.11",
+  "source_conversion_created_at": "2026-11-17T16:25:44+09:00",
+  "n_layers": 125,
+  "annotations": "symlink → ../../../../ORNL_Data/DSCNN_Dataset_pbf-2026.11/annotations",
+  "statistics": "label-free: median of all pixels of both photos; map from after-spreading photos (per-cell median over layers, trimmed 2nd-order surface)",
+  "grid": 96,
+  "trim": {
+   "rounds": 3,
+   "k": 2.0
+  },
+  "gates": {
+   "S1_min_layers": 10,
+   "S2_min_sd_pct": 1.0,
+   "S3_min_r2": 0.7
+  },
+  "sources": {
+   "v2021_LPBF": {
+    "name": "v2021_LPBF",
+    "n_layers": 20,
+    "brightness": 98.0,
+    "shift": 17.0,
+    "coef": [
+     0.9745787479752025,
+     -0.01300727889589613,
+     0.05339603201062246,
+     0.014756542463182785,
+     0.004697147966677152,
+     0.021295275484916415
+    ],
+    "map_sd_pct": 2.0985612091316104,
+    "map_p2p_pct": 10.132097851370636,
+    "map_r2": 0.8282388421496153,
+    "trimmed_pct": 13.205295138888884,
+    "gates": {
+     "S1_layers": true,
+     "S2_size": true,
+     "S3_smooth": true
+    },
+    "use_map": true,
+    "grid": 96,
+    "short": "L21",
+    "applied": {
+     "shift": 17.0,
+     "map": false,
+     "clipped_pct": 0.43752556415291216
+    }
+   },
+   "v2022_17-4PH": {
+    "name": "v2022_17-4PH",
+    "n_layers": 14,
+    "brightness": 154.0,
+    "shift": -39.0,
+    "coef": [
+     0.9916614549926963,
+     -0.039662742586545396,
+     -0.014239695794942329,
+     0.0005003898510001375,
+     0.0043791564533301715,
+     0.03873954452774144
+    ],
+    "map_sd_pct": 2.6373082673548054,
+    "map_p2p_pct": 12.209330277201136,
+    "map_r2": 0.6666034255522658,
+    "trimmed_pct": 17.686631944444443,
+    "gates": {
+     "S1_layers": true,
+     "S2_size": true,
+     "S3_smooth": false
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "17-4",
+    "applied": {
+     "shift": -39.0,
+     "map": false,
+     "clipped_pct": 0.012380419994487852
+    }
+   },
+   "v2022_GammaPrint": {
+    "name": "v2022_GammaPrint",
+    "n_layers": 9,
+    "brightness": 129.0,
+    "shift": -14.0,
+    "coef": [
+     0.9254567030131744,
+     0.008068405804784684,
+     0.05827941281883723,
+     -0.07231775601100719,
+     -0.0015402978556745648,
+     0.16073955255482525
+    ],
+    "map_sd_pct": 6.71613805815624,
+    "map_p2p_pct": 30.93300406033068,
+    "map_r2": 0.5961175868342465,
+    "trimmed_pct": 6.5755208333333375,
+    "gates": {
+     "S1_layers": false,
+     "S2_size": true,
+     "S3_smooth": false
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "GP",
+    "applied": {
+     "shift": -14.0,
+     "map": false,
+     "clipped_pct": 0.0
+    }
+   },
+   "v2022_Inc718_1": {
+    "name": "v2022_Inc718_1",
+    "n_layers": 5,
+    "brightness": 140.0,
+    "shift": -25.0,
+    "coef": [
+     1.002593011186826,
+     -0.012696478579537892,
+     -0.01570370641385298,
+     0.007163282564872539,
+     0.01027884721013977,
+     0.00808506529792116
+    ],
+    "map_sd_pct": 1.0652208207699725,
+    "map_p2p_pct": 5.309847747137752,
+    "map_r2": 0.5399908535914887,
+    "trimmed_pct": 12.358940972222221,
+    "gates": {
+     "S1_layers": false,
+     "S2_size": true,
+     "S3_smooth": false
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "I1",
+    "applied": {
+     "shift": -25.0,
+     "map": false,
+     "clipped_pct": 0.0
+    }
+   },
+   "v2022_Inc718_2": {
+    "name": "v2022_Inc718_2",
+    "n_layers": 24,
+    "brightness": 141.0,
+    "shift": -26.0,
+    "coef": [
+     0.9950481250533794,
+     0.003110618854338197,
+     0.07777358112350272,
+     0.05187251898343528,
+     -0.02402182244003481,
+     -0.06322425782673029
+    ],
+    "map_sd_pct": 4.377913400337946,
+    "map_p2p_pct": 21.490041197404075,
+    "map_r2": 0.49166151095185406,
+    "trimmed_pct": 6.4127604166666625,
+    "gates": {
+     "S1_layers": true,
+     "S2_size": true,
+     "S3_smooth": false
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "I2",
+    "applied": {
+     "shift": -26.0,
+     "map": false,
+     "clipped_pct": 5.710735268587301e-05
+    }
+   },
+   "v2022_Maraging": {
+    "name": "v2022_Maraging",
+    "n_layers": 26,
+    "brightness": 55.0,
+    "shift": 60.0,
+    "coef": [
+     1.0202454101177219,
+     0.010159723612533878,
+     -0.13839689845661213,
+     0.006238804496467946,
+     -0.0005507745601246208,
+     0.07891296151278969
+    ],
+    "map_sd_pct": 4.898699660204055,
+    "map_p2p_pct": 23.401256585213094,
+    "map_r2": 0.4343540761259228,
+    "trimmed_pct": 14.854600694444443,
+    "gates": {
+     "S1_layers": true,
+     "S2_size": true,
+     "S3_smooth": false
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "MS",
+    "applied": {
+     "shift": 60.0,
+     "map": false,
+     "clipped_pct": 0.01458906997420404
+    }
+   },
+   "v2021_BJ": {
+    "name": "v2021_BJ",
+    "n_layers": 20,
+    "brightness": 112.0,
+    "shift": 3.0,
+    "coef": [
+     0.9870991390257342,
+     -0.0153871233975686,
+     0.02800878625394165,
+     -0.005301479114943826,
+     0.004771641058351496,
+     0.009895805268385946
+    ],
+    "map_sd_pct": 1.3211130730490765,
+    "map_p2p_pct": 6.588773606364928,
+    "map_r2": 0.745886408330772,
+    "trimmed_pct": 6.0221354166666625,
+    "gates": {
+     "S1_layers": true,
+     "S2_size": true,
+     "S3_smooth": true
+    },
+    "use_map": true,
+    "grid": 96,
+    "short": "BJ21",
+    "applied": {
+     "shift": 3.0,
+     "map": false,
+     "clipped_pct": 0.3471816989151688
+    }
+   },
+   "v2022_BJ_H13": {
+    "name": "v2022_BJ_H13",
+    "n_layers": 7,
+    "brightness": 100.0,
+    "shift": 15.0,
+    "coef": [
+     1.0129155927794113,
+     -0.040710756450194174,
+     -0.053921109091310655,
+     0.00046919435049312024,
+     -0.033800966312261954,
+     0.015973233399225305
+    ],
+    "map_sd_pct": 3.145625147241251,
+    "map_p2p_pct": 15.417169081746529,
+    "map_r2": 0.712528409219958,
+    "trimmed_pct": 12.977430555555557,
+    "gates": {
+     "S1_layers": false,
+     "S2_size": true,
+     "S3_smooth": true
+    },
+    "use_map": false,
+    "grid": 96,
+    "short": "H13",
+    "applied": {
+     "shift": 15.0,
+     "map": false,
+     "clipped_pct": 0.007653371191658825
+    }
+   }
+  }
+ }
+}
